@@ -42,38 +42,31 @@ FLASH操作思路：
  *----------------------------------------------*/
 #include "stm32f4xx.h" 
 
-#define CARD_NO_LEN_ASC     8       //卡号ASC码长度
+#define CARD_NO_LEN_ASC     8       //卡号ASC码长度，状态(1)+卡号(3)
 #define CARD_NO_LEN_BCD     (CARD_NO_LEN_ASC/2) //卡号BCD码长度
 #define HEAD_lEN 8                  //每条记录占8个字节,4字节卡号，4字节flash中索引
-#define MAX_HEAD_RECORD     7680   //最大32768条记录
+#define MAX_HEAD_RECORD     15360   //最大15000条记录
 #define SECTOR_SIZE         4096    //每个扇区大小
 
-#define MAX_HEAD_DEL_CARDNO     128   //最大可以在删除128张卡
-#define MAX_HEAD_DEL_USERID     128   //最大可以在删除128个用户ID
+#define MAX_HEAD_DEL_CARDNO     256   //最大可以在删除360张卡
+
+
+#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //120K
+#define CARD_DEL_HEAD_SIZE  (HEAD_lEN*MAX_HEAD_DEL_CARDNO)   //2K
 
 
 
-#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //60K
-#define USER_ID_HEAD_SIZE   (CARD_NO_HEAD_SIZE)
-#define CARD_DEL_HEAD_SIZE  (HEAD_lEN*MAX_HEAD_DEL_CARDNO)   //1K
-#define USER_DEL_HEAD_SIZE  (HEAD_lEN*MAX_HEAD_DEL_USERID)
-
-
-#define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //15个扇区
-#define USER_HEAD_SECTOR_NUM     (CARD_HEAD_SECTOR_NUM)
-
-#define HEAD_NUM_SECTOR     (SECTOR_SIZE/HEAD_lEN) //每个扇区存储512个卡号/用户ID
+#define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //30个扇区
+#define HEAD_NUM_SECTOR          (SECTOR_SIZE/HEAD_lEN) //每个扇区存储512个卡号
 
 //改为存储在铁电
 #define CARD_NO_HEAD_ADDR   0x0000
-#define USER_ID_HEAD_ADDR   (CARD_NO_HEAD_ADDR+CARD_NO_HEAD_SIZE)
-#define CARD_DEL_HEAD_ADDR  (USER_ID_HEAD_ADDR+USER_ID_HEAD_SIZE)
-#define USER_DEL_HEAD_ADDR  (CARD_DEL_HEAD_ADDR+CARD_DEL_HEAD_SIZE)
+#define CARD_DEL_HEAD_ADDR  (CARD_NO_HEAD_ADDR+CARD_NO_HEAD_SIZE)
 
 
 //基本参数存储长度及地址
 #define DEVICE_BASE_PARAM_SIZE (896)
-#define DEVICE_BASE_PARAM_ADDR (USER_DEL_HEAD_ADDR+USER_DEL_HEAD_SIZE)
+#define DEVICE_BASE_PARAM_ADDR (CARD_DEL_HEAD_ADDR+CARD_DEL_HEAD_SIZE)
 
 
 //表头的索引存储长度及地址
@@ -99,9 +92,8 @@ FLASH操作思路：
 #define RESERVE_LENGTH             (4) //预留空间 为了对齐，补足一个扇区可以整除的字节数
 
 #define CARD_MODE                   1 //卡模式
-#define USER_MODE                   2 //用户ID模式
-#define CARD_DEL_MODE               3 //删除卡模式
-#define USER_DEL_MODE               4 //删除用户ID模式
+#define CARD_DEL_MODE               2 //删除卡模式
+
 
 
 ////设置卡状态为0，删除卡
@@ -162,16 +154,13 @@ typedef struct USERDATA
 {
     uint8_t head;                                   //数据头
     uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
-    uint8_t defaultFloor;                           //默认楼层  
     uint8_t cardState;                              //卡状态 有效/已删除/黑名单/临时卡    
-    uint8_t userState;                              //用户状态 有效/已删除
     uint8_t platformType;                           //平台类型，第三方平台、博思高平台等
-    uint8_t userId[CARD_USER_LEN+1];                  //用户ID
     uint8_t cardNo[CARD_USER_LEN+1];                  //卡号
-    char accessFloor[FLOOR_ARRAY_LENGTH+1];        //楼层权限
-    uint8_t startTime[TIME_LENGTH+1];                 //账户有效时间
-    uint8_t endTime[TIME_LENGTH+1];                   //账户结束时间    
-    uint8_t timeStamp[TIME_LENGTH+1];                 //二维码时间戳
+    uint8_t brushCardTime[TIME_LENGTH+1];               //刷卡时间
+//    uint8_t startTime[TIME_LENGTH+1];                 //账户有效时间
+//    uint8_t endTime[TIME_LENGTH+1];                   //账户结束时间    
+//    uint8_t timeStamp[TIME_LENGTH+1];                 //二维码时间戳
     uint8_t reserve[RESERVE_LENGTH+1];                //预留空间 
     uint8_t crc;                                    //校验值 head~reseve
 }USERDATA_STRU;
@@ -179,15 +168,6 @@ typedef struct USERDATA
 
 extern USERDATA_STRU gUserDataStru;
 
-/*
-typedef struct USERSTATE
-{
-    uint8_t isInvalid;
-    uint8_t isValid;
-    uint8_t isTemporary;
-    uint8_t isBlackList;
-}USERSTATE_STRU;
-*/
 
 void eraseHeadSector(void);
 void eraseDataSector(void);
@@ -201,10 +181,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 
 uint8_t modifyUserData(USERDATA_STRU *userData,uint8_t mode);
 
-uint8_t delUserData(uint8_t *header,uint8_t mode);
-
 uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
-//ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index );
 
 void TestFlash(uint8_t mode);
 
@@ -214,7 +191,9 @@ int readHead(HEADINFO_STRU *head,uint8_t mode);
 
 void sortHead(HEADINFO_STRU *head,int length);
 
-void addHead(uint8_t *head,uint8_t mode);
+uint8_t addHead(uint8_t *head,uint8_t mode);
+
+int delHead(uint8_t *headBuff,uint8_t mode);
 
 
 

@@ -62,17 +62,11 @@ void CreateLedTask(void)
 //LED任务函数 
 static void vTaskLed(void *pvParameters)
 {  
-    uint8_t i = 0;
+
     
     
     while(1)
     {  
-//        if(i == 250)
-//        {
-//            i = 100;
-//        }
-//        i+=20;
-//        bsp_SetTIMOutPWM(GPIOG, GPIO_Pin_8, TIM1, 1, 100, ((i) * 10000) /255);
         LEDERROR = !LEDERROR;
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  

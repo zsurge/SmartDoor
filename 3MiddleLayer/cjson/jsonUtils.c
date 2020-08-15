@@ -444,7 +444,7 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
         return CJSON_PARSE_ERR;
     } 
     
-    cJSON_AddStringToObject(root,"commandCode","3013");
+    cJSON_AddStringToObject(root,"commandCode","1054");
     cJSON_AddStringToObject(root,"deviceCode",gDevBaseParam.deviceCode.deviceSn);
      
     tmpBuf = cJSON_PrintUnformatted(root); 
@@ -471,11 +471,11 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
 
 
 
-uint8_t* packetBaseJson(uint8_t *jsonBuff)
+uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
 {
     static uint8_t value[256] = {0};
     
-	cJSON* root,*newroot,*tmpdataObj,*dataObj,*json_cmdCode,*json_devCode,*identification,*id;
+	cJSON* root,*newroot,*json_cmdCode,*json_devCode,*json_ownerId;
     char *tmpBuf;
     
 	root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
@@ -491,15 +491,12 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff)
 	else
 	{
         json_cmdCode = cJSON_GetObjectItem ( root, "commandCode" );
-        json_devCode = cJSON_GetObjectItem ( root, "deviceCode" );
-        
-        tmpdataObj = cJSON_GetObjectItem ( root, "data" );        
-        identification = cJSON_GetObjectItem ( tmpdataObj, "identification" );
-        id = cJSON_GetObjectItem ( tmpdataObj, "id" );
+        json_devCode = cJSON_GetObjectItem ( root, "deviceCode" );        
+        json_ownerId = cJSON_GetObjectItem ( root, "ownerId" );
 
         newroot = cJSON_CreateObject();
-        dataObj = cJSON_CreateObject();
-        if(!newroot && !dataObj)
+   
+        if(!newroot)
         {
             log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
             cJSON_Delete(root);
@@ -513,20 +510,21 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff)
 
         if(json_devCode)
             cJSON_AddStringToObject(newroot, "deviceCode", json_devCode->valuestring);
-
-
-        cJSON_AddItemToObject(newroot, "data", dataObj);
+            
+        if(json_ownerId)
+            cJSON_AddNumberToObject(newroot, "ownerId", json_ownerId->valueint);
+            
         
-        if(identification)
-            cJSON_AddStringToObject(dataObj, "identification", identification->valuestring);
-
-        if(id)
-            cJSON_AddNumberToObject(dataObj, "id", id->valueint);
-
-        cJSON_AddStringToObject(dataObj, "status", "1");
+        if(status == 1)
+            cJSON_AddStringToObject(newroot, "status", "1");
+        else
+            cJSON_AddStringToObject(newroot, "status", "0");
+            
 
                 
         tmpBuf = cJSON_PrintUnformatted(newroot); 
+
+        log_d("packetBaseJson = %s\r\n",tmpBuf);
 
         if(!tmpBuf)
         {
@@ -547,128 +545,16 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff)
     cJSON_Delete(newroot);
 
     my_free(tmpBuf);
-
-
+    
     return value;    
 }
-
-#if 0
-uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
-{
-    cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
-    int devNum = 0;
-    int tagFloorNum = 0;
-    int index = 0;
-    uint8_t isFind = 0;
-    int localSn = 11111111;
-
-    
-    if(!jsonBuff || !qrCodeInfo)
-    {
-        cJSON_Delete(root);
-        log_d("error json data\r\n");
-        return STR_EMPTY_ERR;
-    }    
-    
-    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
-    if (!root)  
-    {  
-        cJSON_Delete(root);
-        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
-        return CJSON_PARSE_ERR;
-    }     
-
-    devArray = cJSON_GetObjectItem(root, "d");
-    if(devArray == NULL)
-    {
-        log_d("devArray NULL\r\n");
-        cJSON_Delete(root);
-        return STR_EMPTY_ERR;
-    }   
-
-    devNum = cJSON_GetArraySize(devArray);
-
-    log_d("devNum = %d\r\n",devNum);
-
-    //查找是否在范围之内
-    for(index=0;index<devNum;index++)
-    {
-        tmpArray = cJSON_GetArrayItem(devArray, index);
-        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
-        if(localSn == tmpArray->valueint)
-        {
-            isFind = 1;
-        }
-    }
-    
-    tagFloorArray = cJSON_GetObjectItem(root, "l");
-    if(tagFloorArray == NULL)
-    {
-        log_d("tagFloorArray NULL\r\n");
-        cJSON_Delete(root);
-        return STR_EMPTY_ERR;
-    }
-
-    tagFloorNum = cJSON_GetArraySize(tagFloorArray);
-    log_d("tagFloorNum = %d\r\n",tagFloorNum);
-
-    //只是把权限楼层打印出来并没有存储
-    for(index=0;index<tagFloorNum;index++)
-    {
-        tmpArray = cJSON_GetArrayItem(tagFloorArray, index);
-        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
-    }
-        
-
-    tmpArray = cJSON_GetObjectItem(root, "tF");
-    qrCodeInfo->tagFloor=tmpArray->valueint;
-    log_d("qrCodeInfo->tagFloor = %d\r\n",qrCodeInfo->tagFloor);  
-
-    
-    tmpArray = cJSON_GetObjectItem(root, "oN");
-    qrCodeInfo->openNum = tmpArray->valueint;
-    log_d("qrCodeInfo->openNum= %d\r\n",qrCodeInfo->openNum); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "t");
-    qrCodeInfo->type=tmpArray->valueint;
-    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->type); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "sT");
-    strcpy(qrCodeInfo->startTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
-
-    tmpArray = cJSON_GetObjectItem(root, "eT");
-    strcpy(qrCodeInfo->endTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
-
-    tmpArray = cJSON_GetObjectItem(root, "qS");
-    strcpy(qrCodeInfo->qrStarttimeStamp,tmpArray->valuestring);
-    log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo->qrStarttimeStamp); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "qE");
-    strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
-    log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "qI");
-    strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
-    log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->qrID); 
-    
-    cJSON_Delete(root);
-    
-    return isFind;
-
-}
-#endif
-
-
-
 
 
 
 uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num)
 {
     uint8_t** result; 
-    cJSON* root,*json_item,*dataObj;
+    cJSON* root,*json_item;
     cJSON* arrayElement;
     int tmpArrayNum = 0;
     int i = 0;
@@ -684,12 +570,12 @@ uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *nu
     else
     {
         //根据协议，默认所有的子项是data
-        dataObj = cJSON_GetObjectItem ( root, "data" );  
-        json_item = cJSON_GetObjectItem ( dataObj, (const char*)item );        
-
+        json_item = cJSON_GetObjectItem ( root, "cardNo" );  
+        
         if( json_item->type == cJSON_Array )
         {
             tmpArrayNum = cJSON_GetArraySize(json_item);
+            
             log_d("cardArrayNum = %d\r\n",tmpArrayNum);
             
             //每个人最多20张卡

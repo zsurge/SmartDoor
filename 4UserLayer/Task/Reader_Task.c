@@ -19,14 +19,18 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
+ 
+#define LOG_TAG    "reader"
+#include "elog.h"
+
 #include "Reader_Task.h"
 #include "CmdHandle.h"
 #include "bsp_dipSwitch.h"
 #include "tool.h"
+#include "LocalData.h"
 
 
-#define LOG_TAG    "reader"
-#include "elog.h"
+
 
 
 /*----------------------------------------------*
@@ -34,6 +38,13 @@
  *----------------------------------------------*/
 #define READER_TASK_PRIO	    ( tskIDLE_PRIORITY + 1)
 #define READER_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
+
+typedef union
+{
+	uint32_t id;        //卡号
+	uint8_t sn[4];    //卡号按字符
+}CARD_TYPE;
+
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -65,56 +76,32 @@ void CreateReaderTask(void)
 
 static void vTaskReader(void *pvParameters)
 { 
-    uint32_t CardID = 0;
-    uint8_t dat[4] = {0};
-    uint8_t asc[9] = {0};
-    uint8_t tmp[26] ={ 0x43,0x41,0x52,0x44,0x20,0x32,0x33,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x38,0x39,0x30,0x30,0x30,0x30,0x30,0x30,0x0d,0x0a };
-
-    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
-    READER_BUFF_STRU *ptReader = &gReaderMsg;
+    CARD_TYPE card1,card2;
+    HEADINFO_STRU head;
+    int ret = 0;
 
     while(1)
-    {
-    	/* 清零 */
-        ptReader->dataLen = 0;
-        ptReader->authMode = AUTH_MODE_CARD;
-        memset(ptReader->data,0x00,sizeof(ptReader->data));   
-        
-        CardID = bsp_WeiGenScanf();
+    {        
+        card1.id = bsp_WeiGenScanf(0);
+        card2.id = bsp_WeiGenScanf(1);
 
-        if(CardID != 0)
+        if(card1.id != 0 || card2.id != 0)
         {
-            memset(dat,0x00,sizeof(dat));            
+            log_d("card1 = %x,card2=%x\r\n",card1.id,card2.id);
             
-//			dat[0] = CardID>>24;
-			dat[0] = CardID>>16;
-			dat[1] = CardID>>8;
-			dat[2] = CardID&0XFF;    
+            log_d("card1 %02x,%02x,%02x,%02x\r\n",card1.sn[3],card1.sn[2],card1.sn[1],card1.sn[0]);
+            log_d("card2 %02x,%02x,%02x,%02x\r\n",card2.sn[3],card2.sn[2],card2.sn[1],card2.sn[0]);
 
-            dbh("card id",(char *)dat,3);
-            
-            bcd2asc(asc, dat, 6, 0);
-            log_d("asc = %s\r\n",asc);
-            
-            memcpy(tmp+17,asc,6);
-            log_d("tmp = %s\r\n",tmp);
-            
-            ptReader->dataLen = 25;
-            memcpy(ptReader->data,tmp,ptReader->dataLen);
+            head.headData.id = card1.id;
 
-			/* 使用消息队列实现指针变量的传递 */
-			if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
-						 (void *) &ptReader,   /* 发送结构体指针变量ptReader的地址 */
-						 (TickType_t)50) != pdPASS )
-			{
-                DBG("the queue is full!\r\n");                             
-            } 
+            if(readHead(&head, CARD_MODE) != NO_FIND_HEAD)
+            {
+                log_d("read card success\r\n");
+            }
             else
             {
-                dbh("WGREADER",(char *)dat,4);
-            }          
-
-          
+                log_d("read card error: not find card\r\n");
+            }
         }
         
     	/* 发送事件标志，表示任务正常运行 */        

@@ -308,9 +308,7 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE); 
         strcpy(tmpTime,(const char*)bsp_ds1302_readtime());  
         cJSON_AddStringToObject(dataObj, "callElevatorTime",tmpTime);        
-        cJSON_AddStringToObject(dataObj, "timeStamp",(const char*)localUserData->startTime);
-        cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->userId);              
-        
+
         if(localUserData->authMode == 7)
         {
             cJSON_AddNumberToObject(dataObj, "type",localUserData->platformType);
@@ -326,7 +324,6 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
     {
         cJSON_AddStringToObject(root, "commandCode","4002");
         cJSON_AddNumberToObject(dataObj, "enterType",  4);//这里设置为4是QRCODE在开发者平台上的数据，梯控上的数据为7        
-        cJSON_AddStringToObject(dataObj, "qrId",  (const char*)localUserData->userId);
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE);   
         cJSON_AddStringToObject(dataObj, "enterTime",(const char*)bsp_ds1302_readtime());                
         cJSON_AddNumberToObject(dataObj, "faceCompare",CALL_OK);//：1、成功 2失败，
@@ -355,10 +352,11 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
 
 uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
 {
+    
     cJSON *root ,*tmpArray;
     uint8_t buf[300] = {0};
     uint8_t isFind = 0;
-    
+    #if 0
     if(!jsonBuff || !qrCodeInfo)
     {
         cJSON_Delete(root);
@@ -384,12 +382,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
     log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
     
     tmpArray = cJSON_GetObjectItem(root, "qI");
-//    strcpy((char *)qrCodeInfo->userId,tmpArray->valueint);
-//modify 2020.07.29
-
-//    log_d("QI= %d\r\n",tmpArray->valueint);
     sprintf((char*)qrCodeInfo->userId,"%d",tmpArray->valueint);
-//    itoa(tmpArray->valueint, (char*)qrCodeInfo->userId, 10);
     log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->userId); 
 
     tmpArray = cJSON_GetObjectItem(root, "t");
@@ -399,7 +392,6 @@ uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
     tmpArray = cJSON_GetObjectItem(root, "f1");
     memcpy(qrCodeInfo->accessFloor,parseAccessFloor(tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
 
-//    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,FLOOR_ARRAY_LENGTH);
 
     qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
     log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);
@@ -472,6 +464,8 @@ uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
   
 QR_END:    
     cJSON_Delete(root);
+    
+    #endif
     
     return isFind;
 
@@ -956,18 +950,19 @@ void initDevBaseParam(void)
 	    ClearDevBaseParam();
 	    
         //设备状态为启用状态
-        gDevBaseParam.deviceState.iFlag = DEVICE_ENABLE;        
+        gDevBaseParam.deviceState.iFlag = DEVICE_ENABLE;     
 
         calcMac ( (unsigned char*)mac);
         bcd2asc ( (unsigned char*)asc, (unsigned char*)mac, 12, 0 );
         Insertchar ( asc,temp,':' );
-        memcpy ( gDevBaseParam.deviceCode.deviceSn,temp,strlen ( temp )-1 );
+        gDevBaseParam.deviceCode.deviceSnLen = strlen ( temp )-1 ;
+        memcpy ( gDevBaseParam.deviceCode.deviceSn,temp,gDevBaseParam.deviceCode.deviceSnLen);
         strcpy ( gDevBaseParam.mqttTopic.publish,DEV_FACTORY_PUBLISH );
         strcpy ( gDevBaseParam.mqttTopic.subscribe,DEV_FACTORY_SUBSCRIBE );
-        strncat ( gDevBaseParam.mqttTopic.subscribe,gDevBaseParam.deviceCode.deviceSn,strlen ( temp )-1);
+        strncat ( gDevBaseParam.mqttTopic.subscribe,gDevBaseParam.deviceCode.deviceSn,gDevBaseParam.deviceCode.deviceSnLen);
         memcpy ( gDevBaseParam.deviceCode.qrSn,asc,8); //使用前8位做为本机的QRID
 
-        log_d("gDevBaseParam.deviceCode.deviceSn = %s,len = %d\r\n",gDevBaseParam.deviceCode.deviceSn,strlen ( temp )-1);
+        log_d("gDevBaseParam.deviceCode.deviceSn = %s,len = %d\r\n",gDevBaseParam.deviceCode.deviceSn,gDevBaseParam.deviceCode.deviceSnLen);
         log_d("gDevBaseParam.mqttTopic.publish = %s\r\n",gDevBaseParam.mqttTopic.publish);
         log_d("gDevBaseParam.mqttTopic.subscribe = %s\r\n",gDevBaseParam.mqttTopic.subscribe);       
         log_d("gDevBaseParam.deviceCode.qrSn = %s\r\n",gDevBaseParam.deviceCode.qrSn);
@@ -997,7 +992,7 @@ uint8_t optDevBaseParam(void *stParam,uint8_t mode,uint32_t len,uint32_t addr)
 
 void clearTemplateFRAM(void)
 {
-    FRAM_Erase ( FM24V10_1,RECORD_INDEX_ADDR,2176);
+    FRAM_Erase ( FM24V10_1,DEVICE_TEMPLATE_PARAM_ADDR,DEVICE_TEMPLATE_PARAM_SIZE);
 }
 
 
@@ -1015,17 +1010,17 @@ void initRecordIndex(void)
     }
 
     log_d("gCurCardHeaderIndex = %d\r\n",gRecordIndex.cardNoIndex);
-    log_d("gCurUserHeaderIndex = %d\r\n",gRecordIndex.userIdIndex);
     log_d("gDelCardHeaderIndex = %d\r\n",gRecordIndex.delCardNoIndex);
-    log_d("gDelUserHeaderIndex = %d\r\n",gRecordIndex.delUserIdIndex);    
     
 
 	log_d("init param success\r\n");
 }
 void ClearRecordIndex(void)
 {
-	memset(&gRecordIndex,0x00,sizeof(RECORDINDEX_STRU));    
+	memset(&gRecordIndex,0x00,sizeof(RECORDINDEX_STRU)); 
 }
+
+
 uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode)
 {
     uint8_t ret = 0;
@@ -1043,8 +1038,7 @@ uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode)
     {
         memcpy(buff,recoIndex,sizeof(RECORDINDEX_STRU));   
 
-        log_d("write index %d,%d,%d,%d\r\n",recoIndex->cardNoIndex,recoIndex->delCardNoIndex,recoIndex->userIdIndex,recoIndex->delUserIdIndex);
-        dbh("write index", buff, sizeof(RECORDINDEX_STRU));
+        log_d("write index %d,%d\r\n",recoIndex->cardNoIndex,recoIndex->delCardNoIndex);
         
     	ret = FRAM_Write ( FM24V10_1, RECORD_INDEX_ADDR, buff,sizeof(RECORDINDEX_STRU) );
     	if ( ret == 0 )

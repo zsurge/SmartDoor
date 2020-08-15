@@ -23,7 +23,6 @@
 #include "string.h"
 #include "stm32f4xx_conf.h"
 #include "sys.h"
-#include "ringbuff.h"
 
 
 //引脚定义
@@ -49,7 +48,7 @@
 #define RS485_U6_TX_EN()	    {PAout(8)=1;} //SP485发送模式,高电平有效
 
 extern uint8_t gUsart6RXBuff[COM6_RXBUFFER_SIZE];//接收缓存器
-extern RingBuff_t ringbuff_handle;
+
 
 
 void BSP_Usart6_Init(uint32_t bound);

@@ -57,7 +57,7 @@ static void my_mem_init(void)
 	bsp_TIM6_Init();            //定时器6初始化
 	
     bsp_InitUart();
-    bsp_Usart5_Init(9600);
+//    bsp_Usart5_Init(9600);
 
     FRAM_Init();              //eeprom初始化
     bsp_ds1302_init(); //DS1302_GPIO_Init();             //时钟芯片初始化
@@ -77,7 +77,7 @@ static void my_mem_init(void)
 
 //    bsp_beep_init();            //蜂鸣器初始化        
 
-//    bsp_WiegandInit();          //韦根读卡器初始化
+    bsp_WiegandInit();          //韦根读卡器初始化
 
     my_mem_init();                  //对内存进行初始化
 

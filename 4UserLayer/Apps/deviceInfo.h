@@ -29,11 +29,11 @@
  #define UPGRADE_URL_MAX_LEN    300
  #define MQTT_TOPIC_MAX_LEN     128
 
- #define DEFAULT_INIVAL 0x55AA55CC
+ #define DEFAULT_INIVAL 0x55AA55AA
  #define DEFAULT_DEV_NAME "ELEVATOR"
 
  #define DEVICE_DISABLE 0x00
- #define DEVICE_ENABLE  0x5555AAAA
+ #define DEVICE_ENABLE  0x5555BBBB
 
  #define WRITE_PRARM    0x01
  #define READ_PRARM     0x02
@@ -101,7 +101,7 @@
 typedef union
 {
 	unsigned int iFlag;        //
-	unsigned char cFlag[4];    //卡号按字符
+	unsigned char cFlag[4];    //
 }DEVICE_SWITCH;
 
  
@@ -139,7 +139,9 @@ typedef struct DEVICE_ID
 {
     DEVICE_SWITCH downLoadFlag;       //
     char qrSn[8];                     //二维码下发的本机ID
+    char qrSnLen;
     char deviceSn[32];                //MQTT 订阅时的SN      
+    char deviceSnLen;
 }DEVICE_ID_STRU;
 
 typedef struct UPGRADE_URL
@@ -179,9 +181,7 @@ typedef struct DEV_BASE_PARAM
 typedef struct RECORDINDEX
 {
     volatile uint32_t cardNoIndex;      //当前已存储了多少个卡号
-    volatile uint32_t userIdIndex;      //当前已存储了多少个用户号
     volatile uint32_t delCardNoIndex;   //当前已存储了多少个已删除的卡号
-    volatile uint32_t delUserIdIndex;   //当前已存储了多少个已删除的用户号
 }RECORDINDEX_STRU;
 
 

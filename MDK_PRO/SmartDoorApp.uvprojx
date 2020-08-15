@@ -517,41 +517,6 @@
               <FileName>BarCode_Task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\4UserLayer\Task\BarCode_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>Comm_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\Comm_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>HandShake_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\HandShake_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>Hc595_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\Hc595_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>Key_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\Key_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>Led_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\Led_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>Mqtt_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\Mqtt_Task.c</FilePath>
-            </File>
-            <File>
-              <FileName>Reader_Task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\Task\Reader_Task.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -605,6 +570,41 @@
               </FileOption>
             </File>
             <File>
+              <FileName>Comm_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Comm_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>HandShake_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\HandShake_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Hc595_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Hc595_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Key_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Key_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Led_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Led_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Mqtt_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Mqtt_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Reader_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Reader_Task.c</FilePath>
+            </File>
+            <File>
               <FileName>Watchdog_Task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\4UserLayer\Task\Watchdog_Task.c</FilePath>
@@ -613,6 +613,57 @@
               <FileName>DataProcess_Task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\4UserLayer\Task\DataProcess_Task.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>0</AlwaysBuild>
+                  <GenerateAssemblyFile>0</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>0</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <uC99>2</uC99>
+                    <uGnu>2</uGnu>
+                    <useXO>2</useXO>
+                    <v6Lang>0</v6Lang>
+                    <v6LangP>0</v6LangP>
+                    <vShortEn>2</vShortEn>
+                    <vShortWch>2</vShortWch>
+                    <v6Lto>2</v6Lto>
+                    <v6WtE>2</v6WtE>
+                    <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
           </Files>
         </Group>
@@ -734,62 +785,6 @@
               <FileName>bsp_spi_flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\2LowLayer\FLASH\bsp_spi_flash.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_infrared.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\2LowLayer\INFRARED\bsp_infrared.c</FilePath>
-              <FileOption>
-                <CommonProperty>
-                  <UseCPPCompiler>2</UseCPPCompiler>
-                  <RVCTCodeConst>0</RVCTCodeConst>
-                  <RVCTZI>0</RVCTZI>
-                  <RVCTOtherData>0</RVCTOtherData>
-                  <ModuleSelection>0</ModuleSelection>
-                  <IncludeInBuild>0</IncludeInBuild>
-                  <AlwaysBuild>0</AlwaysBuild>
-                  <GenerateAssemblyFile>0</GenerateAssemblyFile>
-                  <AssembleAssemblyFile>0</AssembleAssemblyFile>
-                  <PublicsOnly>2</PublicsOnly>
-                  <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument></CustomArgument>
-                  <IncludeLibraryModules></IncludeLibraryModules>
-                  <ComprImg>1</ComprImg>
-                </CommonProperty>
-                <FileArmAds>
-                  <Cads>
-                    <interw>2</interw>
-                    <Optim>0</Optim>
-                    <oTime>2</oTime>
-                    <SplitLS>2</SplitLS>
-                    <OneElfS>2</OneElfS>
-                    <Strict>2</Strict>
-                    <EnumInt>2</EnumInt>
-                    <PlainCh>2</PlainCh>
-                    <Ropi>2</Ropi>
-                    <Rwpi>2</Rwpi>
-                    <wLevel>0</wLevel>
-                    <uThumb>2</uThumb>
-                    <uSurpInc>2</uSurpInc>
-                    <uC99>2</uC99>
-                    <uGnu>2</uGnu>
-                    <useXO>2</useXO>
-                    <v6Lang>0</v6Lang>
-                    <v6LangP>0</v6LangP>
-                    <vShortEn>2</vShortEn>
-                    <vShortWch>2</vShortWch>
-                    <v6Lto>2</v6Lto>
-                    <v6WtE>2</v6WtE>
-                    <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls></MiscControls>
-                      <Define></Define>
-                      <Undefine></Undefine>
-                      <IncludePath></IncludePath>
-                    </VariousControls>
-                  </Cads>
-                </FileArmAds>
-              </FileOption>
             </File>
             <File>
               <FileName>bsp_key.c</FileName>
@@ -967,6 +962,57 @@
               <FileName>bsp_usart5.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\2LowLayer\USART\bsp_usart5.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>0</AlwaysBuild>
+                  <GenerateAssemblyFile>0</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>0</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <uC99>2</uC99>
+                    <uGnu>2</uGnu>
+                    <useXO>2</useXO>
+                    <v6Lang>0</v6Lang>
+                    <v6LangP>0</v6LangP>
+                    <vShortEn>2</vShortEn>
+                    <vShortWch>2</vShortWch>
+                    <v6Lto>2</v6Lto>
+                    <v6WtE>2</v6WtE>
+                    <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
               <FileName>bsp_usart6.c</FileName>
@@ -1028,6 +1074,57 @@
               <FileName>ringbuff.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\2LowLayer\USART\ringbuff.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>0</AlwaysBuild>
+                  <GenerateAssemblyFile>0</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>0</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <uC99>2</uC99>
+                    <uGnu>2</uGnu>
+                    <useXO>2</useXO>
+                    <v6Lang>0</v6Lang>
+                    <v6LangP>0</v6LangP>
+                    <vShortEn>2</vShortEn>
+                    <vShortWch>2</vShortWch>
+                    <v6Lto>2</v6Lto>
+                    <v6WtE>2</v6WtE>
+                    <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
               <FileName>bsp_MB85RC128.c</FileName>

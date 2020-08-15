@@ -45,10 +45,8 @@
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
-static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData);
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
 static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);
-static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t *tagFloor,uint8_t len);
 
 static ELEVATOR_BUFF_STRU  gtmpElevtorData;
 
@@ -94,14 +92,6 @@ void packetSendBuf(READER_BUFF_STRU *pQueue)
                 log_d("reject access\r\n");
                 return ;  //无权限
             }
-
-            //1.发给电梯的数据
-            ret = packetToElevator(localUserData);
-            if(ret != NO_ERR)
-            {
-                log_d("invalid floor\r\n");
-                return ;  //无权限   
-            }
             
             //2.发给服务器
             packetPayload(localUserData,jsonBuf); 
@@ -112,16 +102,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue)
             log_d("send = %d\r\n",len);            
             break;
         case AUTH_MODE_REMOTE:
-            //直接发送目标楼层
-            log_d("send desc floor = %s,%d\r\n",pQueue->data,pQueue->dataLen);  
 
-            ret = packetRemoteRequestToElevator(pQueue->data,pQueue->dataLen);
-            if(ret != NO_ERR)
-            {
-                log_d("invalid floor\r\n");
-                return ;  //无权限   
-            }
-                    
             break;
         case AUTH_MODE_UNBIND:
             //直接发送停用设备指令
@@ -143,7 +124,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue)
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
-    uint8_t key[CARD_NO_LEN+1] = {0};  
+    uint8_t key[CARD_NO_BCD_LEN+1] = {0};  
     uint8_t isFind = 0;  
     
     memset(key,0x00,sizeof(key)); 
@@ -157,8 +138,6 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
         localUserData->authMode = pQueue->authMode; 
         isFind = parseQrCode(pQueue->data,localUserData);
 
-        log_d("qrCodeInfo->startTime= %s\r\n",localUserData->startTime); 
-        log_d("qrCodeInfo->endTime= %s\r\n",localUserData->endTime);  
         log_d("isfind = %d\r\n",isFind);      
 
         if(isFind != NO_ERR)
@@ -172,7 +151,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
     else
     {
         //读卡 CARD 230000000089E1E35D,23         
-        memcpy(key,pQueue->data,CARD_NO_LEN);
+        memcpy(key,pQueue->data,CARD_NO_BCD_LEN);
         log_d("key = %s\r\n",key);     
         
         isFind = readUserData(key,CARD_MODE,localUserData);   
@@ -188,18 +167,10 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
         
         localUserData->platformType = 4;
         localUserData->authMode = pQueue->authMode; 
-        memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN);
-        log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);         
     }
 
-    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
-    log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
-    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
-    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
-    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
+    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);  
     log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
-    log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);
     log_d("localUserData->platformType = %s\r\n",localUserData->platformType);
 
     return result;
@@ -245,234 +216,23 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
     localUserData->authMode = pQueue->authMode;    
     
     if(AUTH_MODE_QR == pQueue->authMode)
-    {
-        strcpy((char*)localUserData->userId,(const char*)key);
-        
+    {        
         strcpy((char*)localUserData->cardNo,buf[0]);        
     }
     else
     {
         memcpy(localUserData->cardNo,key,CARD_NO_LEN);
 
-        log_d("buf[0] = %s\r\n",buf[0]);
-        strcpy((char*)localUserData->userId,buf[0]);        
+        log_d("buf[0] = %s\r\n",buf[0]);     
     }   
 
-    //3867;0;0;2019-12-29;2029-12-31
-    
-    
-    strcpy((char*)localUserData->accessFloor,buf[1]);
-    localUserData->defaultFloor = atoi(buf[2]);
-    strcpy((char*)localUserData->startTime,buf[3]);
-    strcpy((char*)localUserData->endTime,buf[4]);    
 
-
-
-    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
-    log_d("localUserData->userId = %s\r\n",localUserData->userId);
-//    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
-    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
-    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
-    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
+    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);    
     log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
 
     return result;
 
 }
-
-static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData)
-{
-    SYSERRORCODE_E result = NO_ERR;
-    uint8_t tmpBuf[MAX_SEND_LEN+1] = {0};
-    char authLayer[64] = {0}; //权限楼层，最多64层
-    int num = 0;    
-    uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
-    
-    ELEVATOR_BUFF_STRU *devSendData = &gElevtorData;
-	
-    uint8_t allBuff[MAX_SEND_LEN] = { 0x5A,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5B };
-
-    uint8_t floor = 0;
-
-    uint8_t i = 0;
-
-    
-//    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
-//    log_d("localUserData->userId = %s\r\n",localUserData->userId);
-//    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
-//    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
-//    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
-//    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
-//    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);   
-
-    memcpy(authLayer,localUserData->accessFloor,FLOOR_ARRAY_LEN);
-    num = strlen((const char*)authLayer);
-
-    log_d("localUserData->accessFloor num = %d\r\n",num);
-    
-    memset(sendBuf,0x00,sizeof(sendBuf));
-
-	if(num >= 25)
-	{
-		dbh("send multiple", (char *)allBuff, MAX_SEND_LEN);
-		memcpy(devSendData->data,allBuff,MAX_SEND_LEN);
-		
-		for(i = 0 ;i<10;i++)
-		{
-			/* 使用消息队列实现指针变量的传递 */
-			if(xQueueSend(xTransDataQueue,				/* 消息队列句柄 */
-						 (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
-						 (TickType_t)10) != pdPASS )
-			{
-				log_d("the queue is full!\r\n");				
-				xQueueReset(xTransDataQueue);
-			} 
-		   
-		}	
-		
-		return result;
-	}
-    
-    if(num > 1)//多层权限，手动
-    {
-        for(i=0;i<num;i++)
-        {
-            log_d("current floor = %d\r\n",authLayer[i]);
-            calcFloor(authLayer[i],MANUAL_REG,sendBuf,tmpBuf);  
-            memcpy(sendBuf,tmpBuf,MAX_SEND_LEN);
-        }        
-    }
-    else    //单层权限，直接呼默认权限楼层，自动
-    {
-        if(localUserData->defaultFloor != authLayer[0])
-        {
-        
-            log_d("defaultFloor != authLayer,%d,%d\r\n",localUserData->defaultFloor,authLayer[0]);
-            localUserData->defaultFloor = authLayer[0];
-        }
-        
-        floor = localUserData->defaultFloor;//authLayer[0];   
-        
-	    if(floor == 0)
-	    {
-	        return INVALID_FLOOR;//无效的楼层
-	    }
-		
-        calcFloor(floor,AUTO_REG,sendBuf,tmpBuf);            
-    }   
-
-    memset(sendBuf,0x00,sizeof(sendBuf));
-    
-    sendBuf[0] = CMD_STX;
-    sendBuf[1] = bsp_dipswitch_read();
-    memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);
-    
-    sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);  
-    
-    memcpy(devSendData->data,sendBuf,MAX_SEND_LEN);
-    
-//    dbh("send single1", (char *)devSendData->data, MAX_SEND_LEN);
-
-    for(i = 0 ;i<7;i++)
-    {
-        /* 使用消息队列实现指针变量的传递 */
-        if(xQueueSend(xTransDataQueue,              /* 消息队列句柄 */
-        			 (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
-        			 (TickType_t)10) != pdPASS )
-        {
-            log_d("the queue is full!\r\n");                
-            xQueueReset(xTransDataQueue);
-        } 
-       
-    }
-    return result;
-}
-
-
-static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t *tagFloor,uint8_t len)
-{
-    SYSERRORCODE_E result = NO_ERR;
-    uint8_t tmpBuf[MAX_SEND_LEN+1] = {0};
-    uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
-    
-    ELEVATOR_BUFF_STRU *devSendData = &gElevtorData;
-    
-    uint8_t allBuff[MAX_SEND_LEN] = { 0x5A,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5B };
-
-    uint8_t floor = 0;
-
-    uint8_t i = 0; 
-
-    if(len >= 25)
-    {
-        dbh("send multiple", (char *)allBuff, MAX_SEND_LEN);
-        memcpy(devSendData->data,allBuff,MAX_SEND_LEN);
-        
-        for(i = 0 ;i<10;i++)
-        {
-            /* 使用消息队列实现指针变量的传递 */
-            if(xQueueSend(xTransDataQueue,              /* 消息队列句柄 */
-                         (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
-                         (TickType_t)10) != pdPASS )
-            {
-                log_d("the queue is full!\r\n");                
-                xQueueReset(xTransDataQueue);
-            } 
-           
-        }   
-        
-        return result;
-    }
-    
-    if(len > 1)//多层权限，手动
-    {
-        for(i=0;i<len;i++)
-        {
-            log_d("current floor = %d\r\n",tagFloor[i]);
-            calcFloor(tagFloor[i],MANUAL_REG,sendBuf,tmpBuf);  
-            memcpy(sendBuf,tmpBuf,MAX_SEND_LEN);
-        }        
-    }
-    else    //单层权限，直接呼默认权限楼层，自动
-    {        
-        floor = tagFloor[0];   
-        
-        if(floor == 0)
-        {
-            return INVALID_FLOOR;//无效的楼层
-        }
-        
-        calcFloor(floor,AUTO_REG,sendBuf,tmpBuf);            
-    }   
-
-    memset(sendBuf,0x00,sizeof(sendBuf));
-    
-    sendBuf[0] = CMD_STX;
-    sendBuf[1] = bsp_dipswitch_read();
-    memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);
-    
-    sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);  
-    
-    memcpy(devSendData->data,sendBuf,MAX_SEND_LEN);
-    
-
-    for(i = 0 ;i<8;i++)
-    {
-        /* 使用消息队列实现指针变量的传递 */
-        if(xQueueSend(xTransDataQueue,              /* 消息队列句柄 */
-                     (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
-                     (TickType_t)10) != pdPASS )
-        {
-            log_d("the queue is full!\r\n");                
-            xQueueReset(xTransDataQueue);
-        } 
-       
-    }
-    return result;
-}
-
-
-
 
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor)
 {

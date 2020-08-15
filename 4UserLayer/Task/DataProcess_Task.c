@@ -27,7 +27,7 @@
 #include "bsp_uart_fifo.h"
 #include "bsp_dipSwitch.h"
 #include "FloorDataProc.h"
-#include "bsp_usart6.h"
+//#include "bsp_usart6.h"
 #include "malloc.h"
 #include "tool.h"
 
@@ -110,19 +110,3 @@ static void vTaskDataProcess(void *pvParameters)
 }
 
 
-static void test(void)
-{
-    int i = 0; 
-    char buf[4096] = {0};
-
-    memset(buf,0x00,sizeof(buf));
-
-   for(i=0;i<4096;i++)
-   {
-    buf[i] = i;
-   }
-
-    dbh("buf", buf, 4096);
-}
-
- 

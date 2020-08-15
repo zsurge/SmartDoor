@@ -45,6 +45,7 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include<stdio.h>
+#include<stdlib.h>
 #include<string.h>
 #include "calcDevNO.h"
 #include "deviceinfo.h"
@@ -168,10 +169,7 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 
     memset(tmpBuff,0x00,sizeof(tmpBuff));
 
-//    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,8);
-
-    //为测试，改为4 2020.07.29
-    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,4);
+    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,gDevBaseParam.deviceCode.qrSnLen);
 
     devSN = atoi((const char*)tmpBuff);
 

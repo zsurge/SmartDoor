@@ -80,14 +80,23 @@ void TIM6_DAC_IRQHandler( void )
 	if(TIM_GetITStatus(TIM6, TIM_IT_Update) != RESET)
 	{
 		ulHighFrequencyTimerTicks++;
-//		gRandomNum++;
+
         bsp_TimeSysTickHandler();
 
-        if(WG_Rx_Str.END_TIME_C_EN)
-        {
-            if(WG_Rx_Str.End_TIME)
-                WG_Rx_Str.End_TIME--; 
-        }
+		if(WG_Rx_Str[WeiGen1].END_TIME_C_EN)
+	  	{
+	    	if(WG_Rx_Str[WeiGen1].End_TIME)
+	    		WG_Rx_Str[WeiGen1].End_TIME--; 
+	  	}
+	  	
+		if(WG_Rx_Str[WeiGen2].END_TIME_C_EN)
+	  	{
+	    	if(WG_Rx_Str[WeiGen2].End_TIME)
+	    		WG_Rx_Str[WeiGen2].End_TIME--; 
+	  	}   
+
+
+
         
 		TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
 	}

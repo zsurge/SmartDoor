@@ -114,7 +114,7 @@ MQTT_START:
 log_e("2 gDevBaseParam.deviceCode.deviceSn = %s\r\n",gDevBaseParam.deviceCode.deviceSn);
 log_e("2 gDevBaseParam.mqttTopic.publish = %s\r\n",gDevBaseParam.mqttTopic.publish);
 log_e("2 gDevBaseParam.mqttTopic.subscribe = %s\r\n",gDevBaseParam.mqttTopic.subscribe);       
-log_e("2 gDevBaseParam.deviceCode.qrSn = %s\r\n",gDevBaseParam.deviceCode.qrSn);
+log_e("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %d\r\n",gDevBaseParam.deviceCode.qrSn,gDevBaseParam.deviceCode.qrSnLen);
 
 
 //	ReadLocalDevSn();
