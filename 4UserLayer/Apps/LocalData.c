@@ -107,6 +107,7 @@ void eraseUserDataAll ( void )
 	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
 	eraseHeadSector();
 //	eraseDataSector();
+    eraseUserDataIndex();
 	clearTemplateFRAM();
     initTemplateParam();	
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
@@ -241,7 +242,6 @@ uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 	uint8_t ret = 0;
 	int index = 0;
 	uint32_t addr = 0;
-	HEADINFO_STRU head;
 
     int32_t iTime1, iTime2;
 
@@ -253,9 +253,7 @@ uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 	
     iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
 
-    log_d("1 want find head = %x\r\n",head.headData.id);
-
-	index = readHead(&head,mode);
+	index = readHead(header,mode);
 	
     iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
 	log_d("readUserData成功，耗时: %dms\r\n",iTime2 - iTime1);	
@@ -307,8 +305,8 @@ uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
 	uint8_t ret = 0;
 	uint8_t times = 3;
 	uint32_t addr = 0;
-	uint16_t index = 0;
-    HEADINFO_STRU head;
+	int index = 0;
+    uint8_t head[4] = {0};
 
 	int32_t iTime1, iTime2;
 	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
@@ -327,17 +325,17 @@ uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
 
 	if ( mode == CARD_MODE )
 	{
-        asc2bcd (head.headData.sn, userData->cardNo,CARD_NO_LEN_ASC, 1 );
+        asc2bcd (head, userData->cardNo,CARD_NO_LEN_ASC, 1 );
 	
 	}
 
 
 
-    index = readHead(&head,mode);
+    index = readHead(head,mode);
 
 	//log_d("searchHeaderIndex ret = %d",ret);
 
-	if ( ret != 1 )
+	if ( ret ==  NO_FIND_HEAD)
 	{
 		//log_d("can't find the head index\r\n");
 		return 3;//提示未找到索引
@@ -395,39 +393,26 @@ uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
 	return 0;
 }
 
-uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
+
+uint8_t writeZeaoHead (uint8_t multiple,uint16_t remainder)
 {
 	uint8_t times = 3;
-	uint8_t readBuff[HEAD_lEN+1] = {0};
+	uint8_t readBuff[HEAD_lEN] = {0};
 	uint8_t ret = 0;
-	uint8_t headCnt[CARD_USER_LEN] = {0};
-	uint8_t temp[HEAD_lEN+1] = {0};
+	uint8_t temp[HEAD_lEN] = {0};
 	uint32_t addr = 0;
-
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_DEL_HEAD_ADDR + gRecordIndex.delCardNoIndex * HEAD_lEN;
-	}
-
-	if ( header == NULL || strlen ( ( const char* ) header ) == 0 )
-	{
-		return 1;
-	}
-
-	log_d ( "<<<<<<<<<<<<<<write del Header = %s,addr = %d>>>>>>>>>>>>>>\r\n",header,addr );
-
-	memset ( temp,0x00,sizeof ( temp ) );
-	asc2bcd ( temp, header,CARD_NO_LEN_ASC, 0 );
+	
+	addr = CARD_NO_HEAD_ADDR + (multiple * HEAD_NUM_SECTOR + remainder)* sizeof(HEADINFO_STRU);
 
 	while ( times )
 	{
-//		ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
-		ret = FRAM_Write ( FM24V10_1, addr, temp,HEAD_lEN );
+		memset ( temp,0x00,sizeof ( temp ) );
+		ret = FRAM_Write ( FM24V10_1, addr, temp,sizeof(HEADINFO_STRU) );
 
 		//再读出来，对比是否一致
 		memset ( readBuff,0x00,sizeof ( readBuff ) );
-//		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
-		FRAM_Read ( FM24V10_1, addr, readBuff, HEAD_lEN );
+		
+		FRAM_Read ( FM24V10_1, addr, readBuff, sizeof(HEADINFO_STRU) );
 
 		ret = compareArray ( temp,readBuff,HEAD_lEN );
 
@@ -438,7 +423,6 @@ uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
 
 		if ( ret != 0 && times == 1 )
 		{
-			//log_d("write header error\r\n");
 			return 3;
 		}
 
@@ -446,7 +430,6 @@ uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
 	}
 
 	return 0;
-
 }
 
 
@@ -511,7 +494,7 @@ void TestFlash ( uint8_t mode )
 }
 
 //ret success 当前ID在FLASH中的索引;fail NO_FIND_HEAD
-int readHead(HEADINFO_STRU *head,uint8_t mode)
+int readHead(uint8_t *headBuff,uint8_t mode)
 {
 	uint8_t i = 0;
 	uint8_t multiple = 0;
@@ -519,10 +502,15 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
 	uint16_t loop = 0;
 	uint32_t address = 0;
 	uint32_t curIndex = 0;
+	
+	int32_t iTime1, iTime2;
+	 
 	int ret = 0;
+    HEADINFO_STRU head;
 
     //512个头，1页的空间
     HEADINFO_STRU * sectorBuff = (HEADINFO_STRU*)mymalloc(SRAMIN,sizeof(HEADINFO_STRU)*HEAD_NUM_SECTOR);    
+
     
     if (sectorBuff == NULL)
     {
@@ -531,13 +519,17 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
        return NO_FIND_HEAD;
     }
 
-	if ( head == NULL )
+	if ( headBuff == NULL )
 	{
 	    myfree(SRAMIN,sectorBuff);
 		return NO_FIND_HEAD;
 	}	
 
-    log_d("2 want find head = %x\r\n",head->headData.id);
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
+
+	memcpy(head.headData.sn,headBuff,sizeof(head.headData.sn));
+
+    log_d("wang find head.headData.id = %x,sn = %02x,%02x,%02x,%02x\r\n",head.headData.id,head.headData.sn[0],head.headData.sn[1],head.headData.sn[2],head.headData.sn[3]);
 	
 
     ClearRecordIndex();
@@ -569,21 +561,38 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
     
     //2.读取最后一页第一个卡号和最后一个卡号；
     ret = FRAM_Read (FM24V10_1, address, sectorBuff, (remainder)* HEAD_lEN);
+
+    
+    log_d("FRAM_Read SUCCESS addr = %x,remainder = %d\r\n",address,remainder);
+    
+//    for(i=0;i<remainder;i++)
+//    {
+//        log_d("add = %x,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",address,sectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
+//    }    
+    
+    log_d("head = %x,last page %x,%x\r\n",head.headData.id,sectorBuff[0].headData.id,sectorBuff[remainder-1].headData.id);
     
     if(ret == 0)
     {
+        myfree(SRAMIN,sectorBuff);
         log_e("read fram error\r\n");
+        return NO_FIND_HEAD;       
+
     }   
+    
+    log_d("head = %x,last page %x,%x\r\n",head.headData.id,sectorBuff[0].headData.id,sectorBuff[remainder-1].headData.id);
 
     
-    log_d("head = %x,last page %x,%x\r\n",head->headData.id,sectorBuff[0].headData.id,sectorBuff[remainder-1].headData.id);
-
-    
-    if((head->headData.id >= sectorBuff[0].headData.id) && (head->headData.id <= sectorBuff[remainder-1].headData.id))
+    if((head.headData.id >= sectorBuff[0].headData.id) && (head.headData.id <= sectorBuff[remainder-1].headData.id))
     {
-        ret = Bin_Search(sectorBuff,remainder,head->headData.id);
+    
+        ret = Bin_Search(sectorBuff,remainder,head.headData.id);
+
+        log_d("1.Bin_Search = %d\r\n",ret);
+        
         if(ret != NO_FIND_HEAD)
         {
+            log_d("find it\r\n");
             myfree(SRAMIN,sectorBuff);
             return ret;
         }
@@ -598,12 +607,14 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
         
         if(ret == 0)
         {
+            myfree(SRAMIN,sectorBuff);
             log_e("read fram error\r\n");
+            return NO_FIND_HEAD; 
         }  
         
-        if(head->headData.id >= sectorBuff[0].headData.id && head->headData.id <= sectorBuff[HEAD_NUM_SECTOR-1].headData.id)
+        if(head.headData.id >= sectorBuff[0].headData.id && head.headData.id <= sectorBuff[HEAD_NUM_SECTOR-1].headData.id)
         {
-            ret = Bin_Search(sectorBuff,HEAD_NUM_SECTOR,head->headData.id);
+            ret = Bin_Search(sectorBuff,HEAD_NUM_SECTOR,head.headData.id);
             if(ret != NO_FIND_HEAD)
             {
                 myfree(SRAMIN,sectorBuff);
@@ -612,6 +623,9 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
         }
     
     }
+
+	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_d ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );    
 
     myfree(SRAMIN,sectorBuff);
     return NO_FIND_HEAD;
@@ -741,6 +755,9 @@ uint8_t addHead(uint8_t *head,uint8_t mode)
         return ret;
     }   
 
+    log_d("head %02x,%02x,%02x,%02x\r\n",head[0],head[1],head[2],head[3]);
+    
+
     
    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
    //1.先判定当前有多少个卡号;
@@ -799,18 +816,18 @@ uint8_t addHead(uint8_t *head,uint8_t mode)
             return ret;
         }
 
-//        log_d("FRAM_Read SUCCESS addr = %d,remainder = %d\r\n",addr,remainder);
-        
+        log_d("FRAM_Read SUCCESS addr = %x,remainder = %d\r\n",addr,remainder);
+       
 //        for(i=0;i<remainder;i++)
 //        {
-//            log_d("add = %d,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",addr,sectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
+//            log_d("add = %x,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",addr,sectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
 //        }        
         
         //4.赋值,追加需要添加的卡号到最后一个位置
         sectorBuff[remainder].flashAddr = curIndex;
         memcpy(sectorBuff[remainder].headData.sn,head,CARD_NO_LEN_BCD);
         
-//        dbh("add head", sectorBuff[remainder].headData.sn, CARD_NO_LEN_BCD);  
+        log_d("add head = %x,sn = %02x %02x %02x %02x", sectorBuff[remainder].headData.id, sectorBuff[remainder].headData.sn[0],sectorBuff[remainder].headData.sn[1],sectorBuff[remainder].headData.sn[2],sectorBuff[remainder].headData.sn[3]);  
 
         
         //5.排序
@@ -848,7 +865,7 @@ uint8_t addHead(uint8_t *head,uint8_t mode)
     optRecordIndex(&gRecordIndex,WRITE_PRARM);
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_e ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );
+	log_d ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );
 
     myfree(SRAMIN,sectorBuff);
 
@@ -881,6 +898,9 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     }   
 
     memcpy(head.headData.sn,headBuff,sizeof(head.headData.sn));
+   log_d("source id = %02x,%02x,%02x,%02x\r\n",headBuff[0],headBuff[1],headBuff[2],headBuff[3]);
+   log_d("head.headData.id = %x,sn = %02x,%02x,%02x,%02x\r\n",head.headData.id,head.headData.sn[0],head.headData.sn[1],head.headData.sn[2],head.headData.sn[3]);
+    
     
    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
    //1.先判定当前有多少个卡号;
@@ -913,7 +933,14 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     
     
     //2.读取最后一页第一个卡号和最后一个卡号；
-    ret = FRAM_Read (FM24V10_1, addr, sectorBuff, (remainder)* HEAD_lEN);
+    ret = FRAM_Read (FM24V10_1, addr, sectorBuff, (remainder)* HEAD_lEN);    
+
+    log_d("FRAM_Read SUCCESS addr = %x,remainder = %d\r\n",addr,remainder);
+    
+    for(i=0;i<remainder;i++)
+    {
+        log_d("add = %x,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",addr,sectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
+    }    
     
     log_d("head = %x,last page %x,%x\r\n",head.headData.id,sectorBuff[0].headData.id,sectorBuff[remainder-1].headData.id);
 
@@ -932,6 +959,9 @@ int delHead(uint8_t *headBuff,uint8_t mode)
         {
             //找到，要修改该页该索引的值，然后排序
             sectorBuff[ret].headData.id = 0;//把卡号记做全0
+            //需要写回
+            writeZeaoHead(multiple,ret);
+            
             sortHead(sectorBuff,remainder); 
             //删除索引++，并记录当前页及索引，当前页是会变的
             //这个暂时不做
@@ -963,7 +993,10 @@ int delHead(uint8_t *headBuff,uint8_t mode)
             {
                 //找到，要修改该页该索引的值，然后排序
                 sectorBuff[ret].headData.id = 0;//把卡号记做全0
-                sortHead(sectorBuff,HEAD_NUM_SECTOR); 
+                //需要写回  
+                sortHead(sectorBuff,HEAD_NUM_SECTOR);       
+                
+                
                 myfree(SRAMIN,sectorBuff);
                 log_d("del card success\r\n");
                 return ret;           

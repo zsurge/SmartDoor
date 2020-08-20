@@ -45,14 +45,15 @@ FLASH操作思路：
 #define CARD_NO_LEN_ASC     8       //卡号ASC码长度，状态(1)+卡号(3)
 #define CARD_NO_LEN_BCD     (CARD_NO_LEN_ASC/2) //卡号BCD码长度
 #define HEAD_lEN 8                  //每条记录占8个字节,4字节卡号，4字节flash中索引
+#define DEL_HEAD_lEN 4              //每条记录占4个字节,4字节为已删除卡号索引(M*512+R)
 #define MAX_HEAD_RECORD     15360   //最大15000条记录
 #define SECTOR_SIZE         4096    //每个扇区大小
 
-#define MAX_HEAD_DEL_CARDNO     256   //最大可以在删除360张卡
+#define MAX_HEAD_DEL_CARDNO     512   //最大可以在删除256张卡
 
 
 #define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //120K
-#define CARD_DEL_HEAD_SIZE  (HEAD_lEN*MAX_HEAD_DEL_CARDNO)   //2K
+#define CARD_DEL_HEAD_SIZE  (DEL_HEAD_lEN*MAX_HEAD_DEL_CARDNO)   //2K
 
 
 
@@ -181,19 +182,26 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 
 uint8_t modifyUserData(USERDATA_STRU *userData,uint8_t mode);
 
-uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
+uint8_t writeZeaoHead (uint8_t multiple,uint16_t remainder);
 
 void TestFlash(uint8_t mode);
 
 
 //add 2020.07.14
-int readHead(HEADINFO_STRU *head,uint8_t mode);
+//读取/查找卡号
+int readHead(uint8_t *headBuff,uint8_t mode); 
 
+//对缓冲区的卡号进行排序
 void sortHead(HEADINFO_STRU *head,int length);
 
+//添加卡号
 uint8_t addHead(uint8_t *head,uint8_t mode);
 
+//删除卡号
 int delHead(uint8_t *headBuff,uint8_t mode);
+
+//添加删除卡号对应的索引位置(想法有问题，暂不实现)
+uint8_t addDelHead(int index);
 
 
 

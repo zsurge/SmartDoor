@@ -55,18 +55,25 @@
  * 常量定义                                     *
  *----------------------------------------------*/
 
+#define MAX_CMD_LEN
+ typedef struct CMD_BUFF
+ {
+    uint8_t cmd_len; 
+    uint8_t cmd[32];
+ }CMD_BUFF_STRU;
+
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/ 
 //事件句柄
 extern EventGroupHandle_t xCreatedEventGroup;
 extern SemaphoreHandle_t gxMutex;
-extern QueueHandle_t xTransDataQueue; 
-extern QueueHandle_t xDataProcessQueue; 
+extern QueueHandle_t xCmdQueue; 
+extern QueueHandle_t xCardIDQueue; 
 
 extern SemaphoreHandle_t CountSem_Handle;
 
-
+extern CMD_BUFF_STRU gCmd_buff;
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *

@@ -33,11 +33,16 @@
 
 
 
+
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
 #define READER_TASK_PRIO	    ( tskIDLE_PRIORITY + 1)
 #define READER_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
+
+#define READER1         1           
+#define READER2         2
+
 
 typedef union
 {
@@ -60,6 +65,7 @@ TaskHandle_t xHandleTaskReader = NULL;
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static void vTaskReader(void *pvParameters);
+static void reverseArray(uint8_t *array);
 
 void CreateReaderTask(void)
 {
@@ -72,37 +78,112 @@ void CreateReaderTask(void)
                 (TaskHandle_t*  )&xHandleTaskReader);
 }
 
+void reverseArray(uint8_t *array) 
+{
+    int i,temp;
+    int size = sizeof(array)/sizeof(array[0]);
+
+    
+    for(i=0; i<size/2; i++)
+    {
+        temp = array[i];
+        array[i] = array[size-i-1];
+        array[size-i-1] = temp;
+    }   
+
+}
+
 
 
 static void vTaskReader(void *pvParameters)
 { 
-    CARD_TYPE card1,card2;
-    HEADINFO_STRU head;
+    CARD_TYPE cardDev1,cardDev2;    
+    BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
     int ret = 0;
+
+    READER_BUFF_STRU *ptReaderBuf = &gReaderMsg;  
+    
 
     while(1)
     {        
-        card1.id = bsp_WeiGenScanf(0);
-        card2.id = bsp_WeiGenScanf(1);
+        /* 清零 */
+        ptReaderBuf->devID = 0; 
+        memset(ptReaderBuf->cardID,0x00,sizeof(ptReaderBuf->cardID));  
+    
+        cardDev1.id = bsp_WeiGenScanf(0);
+        cardDev2.id = bsp_WeiGenScanf(1);
 
-        if(card1.id != 0 || card2.id != 0)
+        if(cardDev1.id != 0)
         {
-            log_d("card1 = %x,card2=%x\r\n",card1.id,card2.id);
+            reverseArray(cardDev1.sn);
             
-            log_d("card1 %02x,%02x,%02x,%02x\r\n",card1.sn[3],card1.sn[2],card1.sn[1],card1.sn[0]);
-            log_d("card2 %02x,%02x,%02x,%02x\r\n",card2.sn[3],card2.sn[2],card2.sn[1],card2.sn[0]);
+            ptReaderBuf->devID = READER1; 
+            memcpy(ptReaderBuf->cardID,cardDev1.sn,sizeof(cardDev1.sn));   
 
-            head.headData.id = card1.id;
 
-            if(readHead(&head, CARD_MODE) != NO_FIND_HEAD)
-            {
-                log_d("read card success\r\n");
-            }
-            else
-            {
-                log_d("read card error: not find card\r\n");
-            }
+			/* 使用消息队列实现指针变量的传递 */
+			if(xQueueSend(xCardIDQueue,             /* 消息队列句柄 */
+						 (void *) &ptReaderBuf,             /* 发送结构体指针变量ptReader的地址 */
+						 (TickType_t)30) != pdPASS )
+			{
+                xQueueReset(xCardIDQueue);
+                DBG("send card1  queue is error!\r\n"); 
+                //发送卡号失败蜂鸣器提示
+                //或者是队列满                
+            }            
+
         }
+        
+        /* 清零 */
+        ptReaderBuf->devID = 0; 
+        memset(ptReaderBuf->cardID,0x00,sizeof(ptReaderBuf->cardID));  
+
+        if(cardDev2.id != 0)
+        {
+            reverseArray(cardDev2.sn);
+            
+            ptReaderBuf->devID = READER2; 
+            memcpy(ptReaderBuf->cardID,cardDev2.sn,sizeof(cardDev2.sn));   
+
+			/* 使用消息队列实现指针变量的传递 */
+			if(xQueueSend(xCardIDQueue,             /* 消息队列句柄 */
+						 (void *) &ptReaderBuf,             /* 发送结构体指针变量ptReader的地址 */
+						 (TickType_t)30) != pdPASS )
+			{
+                xQueueReset(xCardIDQueue);
+                DBG("send card2  queue is error!\r\n"); 
+                //发送卡号失败蜂鸣器提示
+                //或者是队列满                
+            } 
+
+        }        
+
+        
+
+//        if(cardDev1.id != 0 || cardDev2.id != 0)
+//        {
+//            log_d("cardDev1 = %x,cardDev2=%x\r\n",cardDev1.id,cardDev2.id);
+//            
+//            log_d("cardDev1 %02x,%02x,%02x,%02x\r\n",cardDev1.sn[0],cardDev1.sn[1],cardDev1.sn[2],cardDev1.sn[3]);
+//            log_d("cardDev2 %02x,%02x,%02x,%02x\r\n",cardDev2.sn[0],cardDev2.sn[1],cardDev2.sn[2],cardDev2.sn[3]);
+
+//            reverseArray(cardDev1.sn);
+//            
+//            log_d("reverseArray %02x,%02x,%02x,%02x\r\n",cardDev1.sn[0],cardDev1.sn[1],cardDev1.sn[2],cardDev1.sn[3]);
+
+//            ret = readHead(cardDev1.sn, CARD_MODE);
+
+//            log_d("readHead = %d\r\n",ret);
+
+//            if(ret != NO_FIND_HEAD)
+//            {
+//                log_d("read card success\r\n");
+//            }
+//            else
+//            {
+//                log_d("read card error: not find card\r\n");
+//            }
+//        }        
         
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);       

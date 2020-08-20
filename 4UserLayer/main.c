@@ -43,8 +43,8 @@ static TaskHandle_t xHandleTaskAppCreate = NULL;
 
 SemaphoreHandle_t gxMutex = NULL;
 EventGroupHandle_t xCreatedEventGroup = NULL;
-QueueHandle_t xTransDataQueue = NULL; 
-QueueHandle_t xDataProcessQueue = NULL;
+QueueHandle_t xCmdQueue = NULL; 
+QueueHandle_t xCardIDQueue = NULL;
 SemaphoreHandle_t CountSem_Handle = NULL;
 
 
@@ -117,12 +117,14 @@ static void AppTaskCreate (void)
     //数码管显示
     CreateHc595Task();    
     
-//    //按键
-//    CreateKeyTask();
+    //按键
+    //CreateKeyTask();
 
     //读卡器
     CreateReaderTask();
 
+    //卡数据处理
+    CreateDataProcessTask();
 
     //MQTT通讯
     CreateMqttTask();
@@ -170,20 +172,19 @@ static void AppObjCreate (void)
     }    
 
     //创消息队列，存放刷卡及二维码数据
-
-    xDataProcessQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
+    xCardIDQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
                               (UBaseType_t ) sizeof(READER_BUFF_STRU *));/* 消息的大小 */
-    if(xDataProcessQueue == NULL)
+    if(xCardIDQueue == NULL)
     {
-        App_Printf("创建 xDataProcessQueue 消息队列失败!\r\n");
+        App_Printf("create xCardIDQueue error!\r\n");
     }
     
     
-    xTransDataQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
-                              (UBaseType_t ) sizeof(char *));/* 消息的大小 */
-    if(xTransDataQueue == NULL)
+    xCmdQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
+                              (UBaseType_t ) sizeof(CMD_BUFF_STRU *));/* 消息的大小 */
+    if(xCmdQueue == NULL)
     {
-        App_Printf("创建 xTransDataQueue 消息队列失败!\r\n");
+        App_Printf("create xCmdQueue error!\r\n");
     }
    
 

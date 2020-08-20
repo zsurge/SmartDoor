@@ -41,9 +41,9 @@
 /*----------------------------------------------*
  * ∫Í∂®“Â                                       *
  *----------------------------------------------*/
-#define MAX_CMD_LEN 5
-#define MAX_SEND_LEN 37
-#define CMD_STX     0x5A
+//#define MAX_CMD_LEN 5
+//#define MAX_SEND_LEN 37
+//#define CMD_STX     0x5A
 
 
 /*----------------------------------------------*

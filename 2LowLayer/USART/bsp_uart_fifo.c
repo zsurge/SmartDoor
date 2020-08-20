@@ -1664,39 +1664,38 @@ void USART6_IRQHandler(void)
  
 
 
-void RS485_U6_RX_EN(void)
-{
-    int i=0;
+//void RS485_U6_RX_EN(void)
+//{
+//    int i=0;
 
-    for(i=0;i<500;i++)
-    {
-        ;
-    }
-//     GPIOA->BSRRH = GPIO_Pin_8;
-     GPIO_ResetBits(GPIOA,GPIO_Pin_8); 
-    for(i=0;i<500;i++)
-    {
-        ;
-    }
-}
+//    for(i=0;i<500;i++)
+//    {
+//        ;
+//    }
+//     GPIO_ResetBits(GPIOA,GPIO_Pin_8); 
+//    for(i=0;i<500;i++)
+//    {
+//        ;
+//    }
+//}
 
-void RS485_U6_TX_EN(void)
-{
-    int i=0;
+//void RS485_U6_TX_EN(void)
+//{
+//    int i=0;
 
-    for(i=0;i<500;i++)
-    {
-        ;
-    }
-//     GPIOA->BSRRL = GPIO_Pin_8;
-    GPIO_SetBits(GPIOA,GPIO_Pin_8);
+//    for(i=0;i<500;i++)
+//    {
+//        ;
+//    }
+//    
+//    GPIO_SetBits(GPIOA,GPIO_Pin_8);
 
-    for(i=0;i<500;i++)
-    {
-        ;
-    }
+//    for(i=0;i<500;i++)
+//    {
+//        ;
+//    }
 
-}
+//}
 
 
 

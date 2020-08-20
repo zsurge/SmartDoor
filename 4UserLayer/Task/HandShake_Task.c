@@ -87,9 +87,7 @@ static void vTaskHandShake(void *pvParameters)
     //读取模板数据
 
 //    eraseUserDataAll();
-
-
-
+    
     initRecordIndex();
     
     initDevBaseParam();
@@ -97,8 +95,6 @@ static void vTaskHandShake(void *pvParameters)
     initTemplateParam();
     
     DisplayDevInfo();
-
-
     
     vTaskDelay(500);
     vTaskDelete( NULL ); //删除自己
@@ -112,8 +108,7 @@ void CreateHandShakeTask(void)
     (uint16_t       )HANDSHAKE_STK_SIZE, 
     (void*          )NULL,              
     (UBaseType_t    )HANDSHAKE_TASK_PRIO,    
-    (TaskHandle_t*  )&xHandleTaskHandShake);  
-
+    (TaskHandle_t*  )&xHandleTaskHandShake); 
 }
 
 

@@ -20,8 +20,11 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
-#include "bsp_usart5.h"
 
+#define LOG_TAG    "BarCode"
+#include "elog.h"
+
+#include "bsp_usart5.h"
 #include "CmdHandle.h"
 #include "tool.h"
 #include "deviceInfo.h"
@@ -30,8 +33,7 @@
 #include "des.h"
 #include "malloc.h"
 //#include "bsp_uart_fifo.h"
-#define LOG_TAG    "BarCode"
-#include "elog.h"
+
 
 /*----------------------------------------------*
  * 宏定义                                       *

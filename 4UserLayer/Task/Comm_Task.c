@@ -26,9 +26,6 @@
 #include "Comm_Task.h"
 #include "CmdHandle.h"
 #include "bsp_uart_fifo.h"
-#include "bsp_dipSwitch.h"
-#include "FloorDataProc.h"
-//#include "bsp_usart6.h"
 #include "malloc.h"
 
 
@@ -36,31 +33,10 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define MAX_RS485_LEN 37
-#define UNFINISHED		        	    0x00
-#define FINISHED          	 			0x55
-
-
-
-#define STEP1   0
-#define STEP2   10
-#define STEP3   20
-#define STEP4   30
-
-typedef struct FROMHOST
-{
-    uint8_t rxStatus;                   //接收状态
-    uint8_t rxCRC;                      //校验值
-    uint8_t rxBuff[16];                 //接收字节数
-    uint16_t rxCnt;                     //接收字节数    
-}FROMHOST_STRU;
-
  
 #define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 8) 
 #define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
-//static uint32_t totalCnt = 0;
-//static uint32_t validCnt = 0;
-//static uint32_t sendCnt = 0;
+
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -76,9 +52,7 @@ TaskHandle_t xHandleTaskComm = NULL;
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static void vTaskComm(void *pvParameters);
-//static uint8_t deal_Serial_Parse(void);
 
-//static FROMHOST_STRU rxFromHost;
 
 
 void CreateCommTask(void)
@@ -93,68 +67,38 @@ void CreateCommTask(void)
 
 
 static void vTaskComm(void *pvParameters)
-{
+{ 
+    BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100); /* 设置最大等待时间为100ms */ 
+    
+    CMD_BUFF_STRU *ptCmd = &gCmd_buff;
+    
+    memset(&gCmd_buff,0x00,sizeof(CMD_BUFF_STRU));   
+    
+
     while(1)
     { 
-        vTaskDelay(300);
+
+        xReturn = xQueueReceive( xCmdQueue,    /* 消息队列的句柄 */
+                                 (void *)&ptCmd,  /*这里获取的是结构体的地址 */
+                                 xMaxBlockTime); /* 设置阻塞时间 */
+        if(pdTRUE == xReturn)
+        {  
+            //发送指令
+            log_d("ptCmd = %02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\r\n",
+            ptCmd->cmd[0],ptCmd->cmd[1],ptCmd->cmd[2],ptCmd->cmd[3],
+            ptCmd->cmd[4],ptCmd->cmd[5],ptCmd->cmd[6],ptCmd->cmd[7]);
+            
+        }
+        else
+        {
+            //发送查询
+//            log_d("send query cmd\r\n");
+        }
+
+        
+         vTaskDelay(100); 
     }  
 }
-
-
-
-
-//static uint8_t deal_Serial_Parse(void)
-//{
-//    uint8_t ch = 0;
-//    
-//    while(RS485_Recv(COM6,&ch,1))
-//    {
-//       switch (rxFromHost.rxStatus)
-//        {                
-//            case STEP1:
-//                if(0x5A == ch) /*接收包头*/
-//                {
-//                    rxFromHost.rxBuff[0] = ch;
-//                    rxFromHost.rxCRC = ch;
-//                    rxFromHost.rxCnt = 1;
-//                    rxFromHost.rxStatus = STEP2;
-//                }
-
-//                break;
-//           case STEP2:
-//                if(0x01 == ch) //判定第二个字节是否是需要的字节，若多梯联动时需读取拨码开关的值
-//                {
-//                    rxFromHost.rxBuff[1] = ch;
-//                    rxFromHost.rxCRC ^= ch;
-//                    rxFromHost.rxCnt = 2;
-//                    rxFromHost.rxStatus = STEP3;                
-//                }
-//                else
-//                {                
-//                   memset(&rxFromHost,0x00,sizeof(FROMHOST_STRU));                   
-//                }
-//                break;           
-//            default:      /* 接收整个数据包 */
-//            
-//                rxFromHost.rxBuff[rxFromHost.rxCnt++] = ch;
-//                rxFromHost.rxCRC ^= ch;
-//                
-//                if(rxFromHost.rxCnt >= 5)
-//                {
-//                
-//                    if(rxFromHost.rxCRC == 0)
-//                    { 
-//                        memset(&rxFromHost,0x00,sizeof(FROMHOST_STRU));
-//                        return FINISHED;                         
-//                    }  
-//                    memset(&rxFromHost,0x00,sizeof(FROMHOST_STRU));
-//                } 
-//             
-//                break;
-//         }
-//         
-//    } 
-//    return UNFINISHED;
-//}
 
 

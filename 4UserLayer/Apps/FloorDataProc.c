@@ -48,7 +48,6 @@
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
 static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);
 
-static ELEVATOR_BUFF_STRU  gtmpElevtorData;
 
 
 
@@ -152,7 +151,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
     {
         //¶Á¿¨ CARD 230000000089E1E35D,23         
         memcpy(key,pQueue->data,CARD_NO_BCD_LEN);
-        log_d("key = %s\r\n",key);     
+        log_d("key = %02x,%02x,%02x,%02x\r\n",key[0],key[1],key[2],key[3]);     
         
         isFind = readUserData(key,CARD_MODE,localUserData);   
 

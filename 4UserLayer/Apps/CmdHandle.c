@@ -65,7 +65,6 @@ uint8_t gUpdateDevSn = 0;
 
 uint32_t gCurTick = 0;
 
-ELEVATOR_BUFF_STRU gElevtorData;
 
 READER_BUFF_STRU gReaderMsg;
 
@@ -134,6 +133,7 @@ typedef struct
 
 const CMD_HANDLE_T CmdList[] =
 {
+    {"201",  OpenDoor},
 	{"1006", AbnormalAlarm},
 	{"1012", AddCardNo},
 	{"1053", DelCardNoAll},
@@ -200,24 +200,20 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 {
     SYSERRORCODE_E result = NO_ERR;
 
-//    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
     READER_BUFF_STRU *ptQR = &gReaderMsg;
     
 	/* 清零 */
-    ptQR->authMode = authMode; 
-    ptQR->dataLen = 0;
-    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
+    ptQR->devID = authMode; 
+    memset(ptQR->cardID,0x00,sizeof(ptQR->cardID)); 
 
-    ptQR->dataLen = len;                
-    memcpy(ptQR->data,buf,len);
     
     /* 使用消息队列实现指针变量的传递 */
-    if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
+    if(xQueueSend(xCardIDQueue,              /* 消息队列句柄 */
                  (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
                  (TickType_t)300) != pdPASS )
     {
         DBG("the queue is full!\r\n");                
-        xQueueReset(xDataProcessQueue);
+        xQueueReset(xCardIDQueue);
     } 
     else
     {
@@ -313,7 +309,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
 SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_TEMP_LEN] = {0};
+    //uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint16_t len = 0;
 
     if(!msgBuf)
@@ -321,11 +317,11 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
     
-    result = modifyJsonItem(packetBaseJson(msgBuf,1),"openStatus","1",1,buf);
+    uint8_t *buf = packetBaseJson(msgBuf,1);
 
-    if(result != NO_ERR)
+    if(buf == NULL)
     {
-        return result;
+        return STR_EMPTY_ERR;
     }
 
     len = strlen((const char*)buf);
@@ -333,6 +329,8 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
     log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
 
     mqttSendData(buf,len);
+
+    TestFlash(CARD_MODE);
     
 	return result;
 }
@@ -375,6 +373,8 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
  
     memset(cardNo,0x00,sizeof(cardNo));
     asc2bcd(cardNo, tmp, CARD_USER_LEN, 1); 
+
+    log_d("add cardNo=  %02x, %02x, %02x, %02x\r\n",cardNo[0],cardNo[1],cardNo[2],cardNo[3]);
     
     ret = addHead(cardNo,CARD_MODE);  
 
@@ -448,7 +448,7 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
         asc2bcd(tmp, cardArray[i], CARD_USER_LEN, 1);        
         log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
         
-        wRet = delHead(cardArray[i],CARD_MODE);
+        wRet = delHead(tmp,CARD_MODE);
         log_d("cardArray %d = %s,ret = %d\r\n",i,cardArray[i],wRet);  
         
         if(wRet == NO_FIND_HEAD)
@@ -598,7 +598,7 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
 
 
     //add 2020.04.27
-    xQueueReset(xDataProcessQueue); 
+    xQueueReset(xCardIDQueue); 
         
     //这里需要发消息到消息队列，启用
     SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
@@ -706,10 +706,14 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
     
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
-    sprintf((char *)cardNo,"%08s",tmp);   
+    sprintf((char *)cardNo,"%08s",tmp); 
+
+    memset(tmp,0x00,sizeof(tmp));
+    asc2bcd(tmp, cardNo, CARD_USER_LEN, 1);        
+    log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);    
     
     //删除CARDNO
-    wRet = delHead(cardNo,CARD_MODE);
+    wRet = delHead(tmp,CARD_MODE);
     
     //2.查询以卡号为ID的记录，并删除
     if(wRet != NO_FIND_HEAD)
@@ -1169,7 +1173,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
     else if(memcmp(type,"1",1) == 0)
     {  
         //add 2020.04.27
-        xQueueReset(xDataProcessQueue); 
+        xQueueReset(xCardIDQueue); 
 
         SaveDevState(DEVICE_ENABLE);          
         SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
