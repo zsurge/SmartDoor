@@ -67,6 +67,7 @@ uint32_t gCurTick = 0;
 
 
 READER_BUFF_STRU gReaderMsg;
+READER_BUFF_STRU gReaderRecvMsg;
 
 static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode);
 static SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf ); //©╙це

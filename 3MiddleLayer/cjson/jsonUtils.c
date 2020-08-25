@@ -27,7 +27,6 @@
 #include "version.h"
 #include "calcDevNO.h"
 #include "bsp_rtc.h"
-//#include "eth_cfg.h"
 #include "LocalData.h"
 #include "malloc.h"
 #include "bsp_ds1302.h"
@@ -652,6 +651,8 @@ uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *nu
     cJSON_Delete(root);
     return result;
 }
+
+
 
 
 

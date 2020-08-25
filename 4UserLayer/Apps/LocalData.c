@@ -625,7 +625,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
     }
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );    
+	log_d ( "read Head success，use %d ms\r\n",iTime2 - iTime1 );    
 
     myfree(SRAMIN,sectorBuff);
     return NO_FIND_HEAD;

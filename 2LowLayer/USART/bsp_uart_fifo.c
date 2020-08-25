@@ -427,19 +427,19 @@ void comClearRxFifo(COM_PORT_E _ucPort)
 	pUart->usRxCount = 0;
 }
 
-uint16_t getRxCnt(COM_PORT_E _ucPort)
-{
-	UART_T *pUart;
+//uint16_t getRxCnt(COM_PORT_E _ucPort)
+//{
+//	UART_T *pUart;
 
-	pUart = ComToUart(_ucPort);
-	if (pUart == 0)
-	{
-		return 0;
-	}
-	//printf("read = %d,cnt = %d\r\n",pUart->usRxRead,pUart->usRxCount);
+//	pUart = ComToUart(_ucPort);
+//	if (pUart == 0)
+//	{
+//		return 0;
+//	}
+//	//printf("read = %d,cnt = %d\r\n",pUart->usRxRead,pUart->usRxCount);
 
-	return pUart->usRxCount;
-}
+//	return pUart->usRxCount;
+//}
 
 
 

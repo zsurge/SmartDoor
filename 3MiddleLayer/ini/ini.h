@@ -68,10 +68,16 @@ void SaveDevState(uint32_t     state);
 
 
 uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
+
+//add 08.24
+uint8_t packetCard(uint8_t *cardID,uint8_t *descJson);
+
 //解析QRCODE数据
 uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
 //保存模板信息
 SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
+
+
 
 
 //add 2020.07.06

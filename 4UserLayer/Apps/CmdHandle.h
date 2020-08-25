@@ -66,7 +66,7 @@ typedef struct
 
 
 
-extern READER_BUFF_STRU gReaderMsg;
+extern READER_BUFF_STRU gReaderMsg,gReaderRecvMsg;
 
 
 extern int gConnectStatus;

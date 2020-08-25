@@ -41,7 +41,7 @@
 #define	UART1_FIFO_EN	0
 #define	UART2_FIFO_EN	1
 #define	UART3_FIFO_EN	0
-#define	UART4_FIFO_EN	0
+#define	UART4_FIFO_EN	1
 #define	UART5_FIFO_EN	0
 #define	UART6_FIFO_EN	1
 
@@ -50,7 +50,7 @@
 #define UART1_RS485_EN	0
 #define	UART2_RS485_EN	0
 #define	UART3_RS485_EN	0
-#define	UART4_RS485_EN	0
+#define	UART4_RS485_EN	1
 #define	UART5_RS485_EN	0
 #define	UART6_RS485_EN	1
 
@@ -95,19 +95,19 @@ typedef enum
 #endif
 
 #if UART4_FIFO_EN == 1
-	#define UART4_BAUD			38400
+	#define UART4_BAUD			9600
 	#define UART4_TX_BUF_SIZE	1*512
 	#define UART4_RX_BUF_SIZE	1*512
 #endif
 
 #if UART5_FIFO_EN == 1
-	#define UART5_BAUD			38400
+	#define UART5_BAUD			9600
 	#define UART5_TX_BUF_SIZE	1*512
 	#define UART5_RX_BUF_SIZE	1*512
 #endif
 
 #if UART6_FIFO_EN == 1
-	#define UART6_BAUD			38400
+	#define UART6_BAUD			115200
 	#define UART6_TX_BUF_SIZE	1*512
 	#define UART6_RX_BUF_SIZE	1*512
 #endif
@@ -135,6 +135,7 @@ typedef struct
 
 void bsp_InitUart(void);
 void comSendBuf(COM_PORT_E _ucPort, uint8_t *_ucaBuf, uint16_t _usLen);
+
 void comSendChar(COM_PORT_E _ucPort, uint8_t _ucByte);
 uint8_t comGetChar(COM_PORT_E _ucPort, uint8_t *_pByte);
 //uint16_t comGetBuff(COM_PORT_E _ucPort,uint8_t *Buff, uint16_t RecvSize);
@@ -157,7 +158,7 @@ uint16_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len,uint32_t
 //void RS485_U6_RX_EN(void);
 //void RS485_U6_TX_EN(void);
 
-uint16_t getRxCnt(COM_PORT_E _ucPort);
+//uint16_t getRxCnt(COM_PORT_E _ucPort);
 
 
 

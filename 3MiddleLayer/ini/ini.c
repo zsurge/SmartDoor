@@ -1070,4 +1070,60 @@ uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode)
 	return ret;
 }
 
+uint8_t packetCard(uint8_t *cardID,uint8_t *descJson)
+{ 
+    SYSERRORCODE_E result = NO_ERR;
+	cJSON* root;
+    char *tmpBuf;
+    char tmpCardID[9] = {0};
+
+    root = cJSON_CreateObject();
+    
+    if(!root)
+    {
+        log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+        cJSON_Delete(root);
+        my_free(tmpBuf);            
+		return CJSON_CREATE_ERR;
+    }
+
+    log_d("3 cardid %02x,%02x,%02x,%02x\r\n",cardID[0],cardID[1],cardID[2],cardID[3]);
+    
+
+    cJSON_AddStringToObject(root, "deviceCode", gDevBaseParam.deviceCode.deviceSn);
+    log_d("deviceCode = %s\r\n",gDevBaseParam.deviceCode.deviceSn);    
+
+    cJSON_AddStringToObject(root, "commandCode","1051");
+    cJSON_AddNumberToObject(root, "status", ON_LINE);   
+    cJSON_AddStringToObject(root, "currentTime",(const char*)bsp_ds1302_readtime());
+    
+    log_d("4 cardid %02x,%02x,%02x,%02x\r\n",cardID[0],cardID[1],cardID[2],cardID[3]);
+
+    memset(tmpCardID,0x00,sizeof(tmpCardID));
+    
+    bcd2asc(tmpCardID,cardID, 8, 1);
+
+    log_d("CARD NO. = %s\r\n",tmpCardID);
+    
+    cJSON_AddStringToObject(root, "cardNo", (const char*)tmpCardID);
+
+    tmpBuf = cJSON_PrintUnformatted(root); 
+
+    if(!tmpBuf)
+    {
+        log_d("cJSON_PrintUnformatted error \r\n");
+        cJSON_Delete(root);
+        my_free(tmpBuf);            
+        return CJSON_FORMAT_ERR;
+    }    
+
+    strcpy((char *)descJson,tmpBuf);    
+
+    cJSON_Delete(root);
+    my_free(tmpBuf);
+    return result;
+
+}
+
+
 
