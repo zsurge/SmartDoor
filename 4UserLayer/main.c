@@ -118,7 +118,7 @@ static void AppTaskCreate (void)
     CreateHc595Task();    
     
     //按键
-    //CreateKeyTask();
+//    CreateKeyTask();
 
     //读卡器
     CreateReaderTask();
@@ -130,7 +130,7 @@ static void AppTaskCreate (void)
     CreateMqttTask();
 
     //看门狗
-//    CreateWatchDogTask();
+    CreateWatchDogTask();
 
     //删除本身
     vTaskDelete(xHandleTaskAppCreate); //删除AppTaskCreate任务

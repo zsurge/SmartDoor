@@ -61,11 +61,10 @@ static void vTaskDisplay(void *pvParameters)
 {
     while(1)
     {
-        bsp_HC595Show(1,2,3);
-        vTaskDelay(300);
-        bsp_HC595Show(4,5,6);
-        vTaskDelay(300);
-        bsp_HC595Show(7,8,9);
+        bsp_HC595Show('A',0,2);
+        vTaskDelay(1000);
+        bsp_HC595Show(0,0,0);
+
 //        vTaskDelay(300);
 //        bsp_HC595Show('a','b','c');
 //        vTaskDelay(300);
@@ -79,7 +78,7 @@ static void vTaskDisplay(void *pvParameters)
         
         /* 发送事件标志，表示任务正常运行 */
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_3);     
-        vTaskDelay(300);
+        vTaskDelay(1000);
     }  
 
 }

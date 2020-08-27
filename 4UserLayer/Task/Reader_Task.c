@@ -186,7 +186,7 @@ static void vTaskReader(void *pvParameters)
 //        }        
         
     	/* 发送事件标志，表示任务正常运行 */        
-    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);       
+    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_2);       
         
         vTaskDelay(100);        
     }

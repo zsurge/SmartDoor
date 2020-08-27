@@ -169,20 +169,23 @@ typedef struct USERDATA
 
 extern USERDATA_STRU gUserDataStru;
 
+extern HEADINFO_STRU gSectorBuff[512];
 
 void eraseHeadSector(void);
 void eraseDataSector(void);
 void eraseUserDataAll(void);
 
 
-
+#if 0
 uint8_t writeUserData(USERDATA_STRU *userData,uint8_t mode);
 
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 
 uint8_t modifyUserData(USERDATA_STRU *userData,uint8_t mode);
 
-uint8_t writeZeaoHead (uint8_t multiple,uint16_t remainder);
+#endif
+
+uint8_t writeZeaoHead (uint8_t multiple,uint16_t remainder,HEADINFO_STRU *card);
 
 void TestFlash(uint8_t mode);
 

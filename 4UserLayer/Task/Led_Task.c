@@ -61,16 +61,13 @@ void CreateLedTask(void)
 
 //LED任务函数 
 static void vTaskLed(void *pvParameters)
-{  
-
-    
-    
+{ 
     while(1)
     {  
         LEDERROR = !LEDERROR;
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
-        vTaskDelay(500); 
+        vTaskDelay(300); 
     }
 } 
 

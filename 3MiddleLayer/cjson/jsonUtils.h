@@ -33,7 +33,7 @@
 /*----------------------------------------------*
  * ∫Í∂®“Â                                       *
  *----------------------------------------------*/
-#define JSON_ITEM_MAX_LEN   1024*2 
+#define JSON_ITEM_MAX_LEN   1024*1 
 #define CARD_NO_LEN             (8)
 #define CARD_NO_BCD_LEN         (4)
 #define USER_ID_LEN             (8)

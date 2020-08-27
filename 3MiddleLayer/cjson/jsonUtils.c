@@ -109,6 +109,7 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
     if(!tmpBuf)
     {
         cJSON_Delete(root);
+         my_free(tmpBuf);
         log_d("cJSON_PrintUnformatted error \r\n");
         return CJSON_FORMAT_ERR;
     }    
@@ -151,11 +152,15 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 	cJSON* arrayElement;
     int tmpArrayNum = 0;
 
+    log_d("<<<<%s>>>>\r\n",jsonBuff);
+
     if(strlen((const char*)jsonBuff) == 0 || strlen((const char*)jsonBuff) > JSON_ITEM_MAX_LEN )
     {
+        cJSON_Delete(root);
         log_d ( "invalid data\r\n");       
 		return NULL;
     }
+    
 	root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
 
 	if ( !root )
@@ -188,28 +193,26 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 			{
 			    strcpy ( (char*)value, json_item->valuestring );
 			}
-//			log_d ( "json_item =  %s\r\n",json_item->valuestring );
 		}
 		else if ( json_item->type == cJSON_Number )
 		{
 			sprintf ( (char*)value,"%d",json_item->valueint );
-//			log_d ( "json_item =  %s\r\n",value);
 		}
-		else if( json_item->type == cJSON_Array )
-		{
+//		else if( json_item->type == cJSON_Array )
+//		{
 
-            //  2.日    期   : 2020年4月11日
-            //    作    者   :  
-            //    修改内容   : 添加对数组的支持，返回值还不完善    
-            tmpArrayNum = cJSON_GetArraySize(json_item);
+//            //  2.日    期   : 2020年4月11日
+//            //    作    者   :  
+//            //    修改内容   : 添加对数组的支持，返回值还不完善    
+//            tmpArrayNum = cJSON_GetArraySize(json_item);
 
-            for(int n=0;n<tmpArrayNum;n++)
-            {
-                arrayElement = cJSON_GetArrayItem(json_item, n);                 
-                strcpy ((char*)value, arrayElement->valuestring );            
-                log_d("cJSON_Array = %s\r\n",arrayElement->valuestring );
-            }
-		}
+//            for(int n=0;n<tmpArrayNum;n++)
+//            {
+//                arrayElement = cJSON_GetArrayItem(json_item, n);                 
+//                strcpy ((char*)value, arrayElement->valuestring );            
+//                log_d("cJSON_Array = %s\r\n",arrayElement->valuestring );
+//            }
+//		}
 		else
 		{
 			log_d ( "can't parse json buff\r\n" );
@@ -220,6 +223,8 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 	}
 
     cJSON_Delete(root);
+
+        
 	return value;
 }
 
@@ -373,12 +378,10 @@ SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff)
         return CJSON_PARSE_ERR;
     }  
     
-    json_devCode = cJSON_GetObjectItem ( root, "deviceCode" );
-    
+    json_devCode = cJSON_GetObjectItem ( root, "deviceCode" );    
     tmpdataObj = cJSON_GetObjectItem ( root, "data" );        
     productionModel = cJSON_GetObjectItem ( tmpdataObj, "productionModel" );
     id = cJSON_GetObjectItem ( tmpdataObj, "id" );
-
     version = cJSON_GetObjectItem ( tmpdataObj, "version" );
     softwareFirmware = cJSON_GetObjectItem ( tmpdataObj, "softwareFirmware" );
     versionType = cJSON_GetObjectItem ( tmpdataObj, "versionType" ); 
@@ -474,10 +477,11 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
 {
     static uint8_t value[256] = {0};
     
-	cJSON* root,*newroot,*json_cmdCode,*json_devCode,*json_ownerId;
+	cJSON* root,*newroot,*json_cmdCode,*json_ownerId;
     char *tmpBuf;
     
 	root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
+	
 	if ( !root )
 	{
 		log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
@@ -490,8 +494,9 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
 	else
 	{
         json_cmdCode = cJSON_GetObjectItem ( root, "commandCode" );
-        json_devCode = cJSON_GetObjectItem ( root, "deviceCode" );        
         json_ownerId = cJSON_GetObjectItem ( root, "ownerId" );
+
+        
 
         newroot = cJSON_CreateObject();
    
@@ -505,14 +510,13 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
         }
 
         if(json_cmdCode)
-            cJSON_AddStringToObject(newroot, "commandCode", json_cmdCode->valuestring);
-
-        if(json_devCode)
-            cJSON_AddStringToObject(newroot, "deviceCode", json_devCode->valuestring);
+            cJSON_AddStringToObject(newroot, "commandCode", json_cmdCode->valuestring);     
             
         if(json_ownerId)
             cJSON_AddNumberToObject(newroot, "ownerId", json_ownerId->valueint);
             
+        
+        cJSON_AddStringToObject(newroot, "deviceCode",gDevBaseParam.deviceCode.deviceSn);
         
         if(status == 1)
             cJSON_AddStringToObject(newroot, "status", "1");
@@ -520,7 +524,7 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
             cJSON_AddStringToObject(newroot, "status", "0");
             
 
-                
+        
         tmpBuf = cJSON_PrintUnformatted(newroot); 
 
         log_d("packetBaseJson = %s\r\n",tmpBuf);
@@ -538,12 +542,10 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
         strcpy((char *)value,tmpBuf);
 
 	}
-
-    cJSON_Delete(root);
-
-    cJSON_Delete(newroot);
-
+	
     my_free(tmpBuf);
+	cJSON_Delete(root);
+    cJSON_Delete(newroot);
     
     return value;    
 }
@@ -552,7 +554,7 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
 
 uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num)
 {
-    uint8_t** result; 
+    static uint8_t** result; 
     cJSON* root,*json_item;
     cJSON* arrayElement;
     int tmpArrayNum = 0;

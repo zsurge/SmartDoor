@@ -147,7 +147,7 @@ const CMD_HANDLE_T CmdList[] =
     {"3003", GetTemplateParam},
     {"1050", DownLoadCardID},   
     {"3005", RemoteOptDev},        
-    {"3006", ClearUserInof},   
+    {"1019", ClearUserInof},   
     {"3010", PCOptDev},
     {"3011", EnableDev}, //同绑定
     {"3012", DisableDev},//同解绑
@@ -310,7 +310,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
 SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-    //uint8_t buf[MQTT_TEMP_LEN] = {0};
+    uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint16_t len = 0;
 
     if(!msgBuf)
@@ -318,11 +318,11 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
     
-    uint8_t *buf = packetBaseJson(msgBuf,1);
+    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status","1",1,buf);
 
-    if(buf == NULL)
+    if(result != NO_ERR)
     {
-        return STR_EMPTY_ERR;
+        return result;
     }
 
     len = strlen((const char*)buf);
@@ -375,6 +375,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     memset(cardNo,0x00,sizeof(cardNo));
     asc2bcd(cardNo, tmp, CARD_USER_LEN, 1); 
 
+    cardNo[0] = 0x00;//韦根26最高位无数据
     log_d("add cardNo=  %02x, %02x, %02x, %02x\r\n",cardNo[0],cardNo[1],cardNo[2],cardNo[3]);
     
     ret = addHead(cardNo,CARD_MODE);  
@@ -744,7 +745,6 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
 SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_MAX_LEN] = {0};
     uint16_t len = 0;
 
     if(!msgBuf)
@@ -756,13 +756,13 @@ SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
     //保存模板数据 这里应该有一个线程专门用于读写FLASH，调试期间，暂时放在响应后边
     //saveTemplateParam(msgBuf);    
     
-    result = modifyJsonItem(packetBaseJson(msgBuf,1),"status","1",1,buf);
+    uint8_t *buf = packetBaseJson(msgBuf,1);
 
-    if(result != NO_ERR)
+    if(buf == NULL)
     {
-        return result;
+        return STR_EMPTY_ERR;
     }
-
+    
     len = strlen((const char*)buf);
 
     log_d("GetParam len = %d,buf = %s\r\n",len,buf);
@@ -816,7 +816,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
 	uint16_t len =0;
-    uint8_t buf[512] = {0};
+    uint8_t buf[256] = {0};
     uint8_t ret = 1;
     uint8_t tmp[CARD_NO_BCD_LEN] = {0};    
     uint8_t **cardArray;
@@ -827,9 +827,6 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
     {
         return STR_EMPTY_ERR;
     }
-
-
-    log_d("msgBuf = %s\r\n",msgBuf);
 
     cardArray = (uint8_t **)my_malloc(20 * sizeof(uint8_t *));
     
@@ -843,7 +840,8 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
         for (i = 0; i < 20; i++)
         {
             my_free(cardArray[i]);
-        }      
+        }    
+        my_free(cardArray);
         
         return STR_EMPTY_ERR;
     } 
@@ -851,13 +849,32 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
 
     //2.保存卡号
     cardArray = GetCardArray ((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",&multipleCardNum);
+
+    if(cardArray == NULL)
+    {
+        for (i = 0; i < 20; i++)
+        {
+            my_free(cardArray[i]);
+        }  
+        my_free(cardArray);
+
+        strcpy((char *)buf,(const char*)packetBaseJson(msgBuf,0));
+
+        len = strlen((const char*)buf);
+        
+        mqttSendData(buf,len);  
+
+        return result;
+    }
+    
     
     for(i=0;i<multipleCardNum;i++)
     {
         log_d("%d / %d :cardNo = %s\r\n",multipleCardNum,i+1,cardArray[i]);      
         memset(tmp,0x00,sizeof(tmp));
         asc2bcd(tmp, cardArray[i], CARD_NO_LEN, 1);
-        log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[3],tmp[2],tmp[1],tmp[0]);
+        tmp[0] = 0x00;//韦根26最高位无数据
+        log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
 
         ret = addHead(tmp,CARD_MODE);
         
@@ -867,6 +884,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
             {
                 my_free(cardArray[i]);
             }   
+            my_free(cardArray);
             
             result = FLASH_W_ERR;
         }  
@@ -889,6 +907,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
             {
                 my_free(cardArray[i]);
             }  
+            my_free(cardArray);
             
             return result;
         }
@@ -905,6 +924,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
     {
         my_free(cardArray[i]);
     }  
+    my_free(cardArray);
     
 	return result;
 
@@ -1119,21 +1139,7 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
     {
         return STR_EMPTY_ERR;
     }
-
-    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",1,buf);
-
-    if(result != NO_ERR)
-    {
-        return result;
-    }
-
-    len = strlen((const char*)buf);
-
-    log_d("ClearUserInof len = %d,buf = %s\r\n",len,buf);
-
-    mqttSendData(buf,len);
-
-
+    
     //清空用户信息
     eraseUserDataAll();
     

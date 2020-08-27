@@ -109,7 +109,7 @@ static void vTaskKey(void *pvParameters)
 				case KEY_RR_PRES:                 
                     check_msg_queue();                    
 
-//                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
+                    bsp_ds1302_mdifytime("2020-08-26 12:00:00");
                     
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
 //                      searchHeadTest("24450854");

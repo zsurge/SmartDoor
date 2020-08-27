@@ -26,7 +26,7 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define HARDWARE_VERSION               "V1.0.1"
-#define SOFTWARE_VERSION               "V1.0.4"
+#define SOFTWARE_VERSION               "V1.0.1"
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -82,7 +82,7 @@ static void my_mem_init(void)
     my_mem_init();                  //对内存进行初始化
 
   /* CmBacktrace initialize */
-   cm_backtrace_init("ElevatorControlAPP", HARDWARE_VERSION, SOFTWARE_VERSION);
+//   cm_backtrace_init("SmartDoorAPP", HARDWARE_VERSION, SOFTWARE_VERSION);
 
 }
 

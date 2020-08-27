@@ -511,8 +511,8 @@ void calcMac(unsigned char *mac)
 
     buf[3] =  crc_value & 0xff;
     buf[4] =  crc_value>>8;
-    buf[5] =  chipid[0]&0xff;    
-
+    buf[5] =  chipid[0]&0xff;  
+    
     memcpy(mac,buf,6);
 
 }

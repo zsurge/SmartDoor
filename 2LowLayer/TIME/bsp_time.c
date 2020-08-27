@@ -38,7 +38,7 @@ void bsp_TimeSysTickHandler (void)
 {
     if (g500usTimerUART) g500usTimerUART--;    
     if (g500usTimerRS485) g500usTimerRS485--; 
-    if (gPlayTimer) gPlayTimer--; 
+    if (gPlayTimer) gPlayTimer++; 
 }
 
 void bsp_TIM6_Init(void)

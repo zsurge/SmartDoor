@@ -107,7 +107,7 @@ static void vTaskDataProcess(void *pvParameters)
 
         log_d("readHead = %d\r\n",ret);
 
-        if(ret == NO_FIND_HEAD)
+        if(ret != NO_FIND_HEAD)
         {
             log_d("read card success\r\n");     
 
@@ -155,7 +155,7 @@ static void vTaskDataProcess(void *pvParameters)
         
         
         /* 发送事件标志，表示任务正常运行 */        
-        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_6); 
+        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4); 
         vTaskDelay(100); 
 
     }

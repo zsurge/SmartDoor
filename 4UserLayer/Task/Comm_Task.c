@@ -124,6 +124,13 @@ typedef enum
    WELCOME_TIPS  
 }HOST_TIPS_INDEX;
 
+typedef struct DEV_STATE
+{
+    uint8_t curState;			    //当前状态值
+	uint8_t preState;		        //上一次状态值          
+}DEV_STATE_STRU;
+
+
 
 
 
@@ -189,6 +196,7 @@ const char * const alarmInfo[] =
 
 static FROMHOST_STRU rxFromHost;
 static char gChannel = 0;
+static DEV_STATE_STRU gDevState,gAbnormalState;
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -258,18 +266,22 @@ static void vTaskComm(void *pvParameters)
             ptCmd->cmd[4],ptCmd->cmd[5],ptCmd->cmd[6],ptCmd->cmd[7]);
 
             RS485_SendBuf(COM6, ptCmd->cmd, ptCmd->cmd_len); 
+
+            sendToSpeak((uint8_t *)alarmInfo[OPENDOOR_TIPS]);
+            
         }
         else
         {
             //发送查询        
             RS485_SendBuf(COM6, (uint8_t *)readDevState, 7); 
-
         }
 
-
-        vTaskDelay(50);         
+        vTaskDelay(20);    
+        
         deal_rx_Parse();
         deal_rx_data(); 
+        
+        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_1);   
         
     }  
 }
@@ -387,56 +399,81 @@ void init_serial_buf(void)
 }
 
 void queryStatusResponse(void)
-{
+{    
+    gDevState.curState = rxFromHost.rxBuff[5];
+    
     switch(rxFromHost.rxBuff[5])
     {
         case NO_INIT:
-            writeLog((char *)dev_info[NO_INIT]);
+            writeLog((char *)dev_info[NO_INIT]);            
             break;
         case LEFT_OK:
             writeLog((char *)dev_info[LEFT_OK]);
+            log_d("左开门OK\r\n");
             break;
         case LEFT_OPENING:
             writeLog((char *)dev_info[LEFT_OPENING]);
+            log_d("左开门中。。。\r\n");
             break;
         case RIGHT_OK:
             writeLog((char *)dev_info[RIGHT_OK]);
+            log_d("右开门OK\r\n");
+            
             break;
         case RIGHT_OPENING:
             writeLog((char *)dev_info[RIGHT_OPENING]);
+            
+            log_d("右开门中。。。\r\n");
             break;
         case CLOSE_OK:
-            writeLog((char *)dev_info[CLOSE_OK]);      
-
-            if(!gPlayTimer)
-            {
-                sendToSpeak((uint8_t *)dev_info[CLOSE_OK]);
-            }            
+            writeLog((char *)dev_info[CLOSE_OK]);             
+//            log_d("关门OK\r\n");
             break;     
         case CLOSE_OPTING:
-            writeLog((char *)dev_info[CLOSE_OPTING]);        
+            writeLog((char *)dev_info[CLOSE_OPTING]);
             break;              
+    }
+
+    if(gDevState.curState != gDevState.preState)
+    {
+        gDevState.preState = gDevState.curState;
+        if(gDevState.curState == CLOSE_OPTING)
+        {            
+            sendToSpeak((uint8_t *)alarmInfo[CLOSEDOOR_TIPS]);
+        }
     }
 
     switch(rxFromHost.rxBuff[6])
     {
         case STANDBY:
             writeLog((char *)openMode[STANDBY]);
+            
+//            log_d("待机\r\n");
             break;
         case HOST_OPEN:
             writeLog((char *)openMode[HOST_OPEN]);
+            log_d("上位机开门\r\n");
+            
             break;
         case INDUCTION_OPEN:
             writeLog((char *)openMode[INDUCTION_OPEN]);
+            log_d("感应开门\r\n");
+            
             break;
         case ANTI_PINCH_OPEN:
             writeLog((char *)openMode[ANTI_PINCH_OPEN]);
+            log_d("防夹开门\r\n");
+            
             break;
         case OBSTRUCT_OPEN:
             writeLog((char *)openMode[OBSTRUCT_OPEN]);
+            log_d("遇阻开门\r\n");
+            
             break;
         case KEY_OPEN:
-            writeLog((char *)openMode[KEY_OPEN]);            
+            writeLog((char *)openMode[KEY_OPEN]);    
+            log_d("按键开门\r\n");
+            
             break;
     }
 
@@ -471,31 +508,49 @@ void queryStatusResponse(void)
             break;     
         case DETENTION_TIMEOUT:
             writeLog((char *)sensorStateInfo[DETENTION_TIMEOUT]); 
-
-            if(gPlayTimer)
+            
+            if(gPlayTimer >= 20000)
             {
-                sendToSpeak((uint8_t *)alarmInfo[RETENTION_TIPS]);
+               gPlayTimer = 1;
+               sendToSpeak((uint8_t *)alarmInfo[RETENTION_TIPS]);
             }
             break;              
     }
 
+    gAbnormalState.curState =  rxFromHost.rxBuff[8];
     switch(rxFromHost.rxBuff[8])
     {
         case HOST_NORMAL: 
-            writeLog((char *)hostStateInfo[HOST_NORMAL]);        
+            writeLog((char *)hostStateInfo[HOST_NORMAL]);     
+//            log_d("----正常----\r\n");
             break;
         case RETROGRADE_ALARM:
-            writeLog((char *)hostStateInfo[RETROGRADE_ALARM]);                
+            writeLog((char *)hostStateInfo[RETROGRADE_ALARM]);  
+//            log_d("----逆行----\r\n");            
             break;
         case FOLLOWING_ALARM:
             writeLog((char *)hostStateInfo[FOLLOWING_ALARM]);
+            
+//            log_d("----尾随----\r\n");
             break;
         case KEY_ERROR_ALARM:
-            writeLog((char *)hostStateInfo[KEY_ERROR_ALARM]);  
+            writeLog((char *)hostStateInfo[KEY_ERROR_ALARM]); 
+//            log_d("----按键错误----\r\n");
             break;
         case DEV_LOST_CONNECT_ALARM:
-            writeLog((char *)dev_info[DEV_LOST_CONNECT_ALARM]);
+            writeLog((char *)hostStateInfo[DEV_LOST_CONNECT_ALARM]);
+            
+//            log_d("----驱动器通信异常----\r\n");
             break;          
+    }
+
+    if(gAbnormalState.curState != gAbnormalState.preState)
+    {
+        gAbnormalState.preState = gAbnormalState.curState;
+        if(gAbnormalState.curState != HOST_NORMAL)
+        {            
+            sendToSpeak((uint8_t *)alarmInfo[gAbnormalState.curState]);
+        }
     }
     
 }
@@ -585,7 +640,7 @@ void sendToSpeak(uint8_t *dat)
 
     addr[len] = crc;
 
-    dbh("sendToSpeak", addr, len+1);
+//    dbh("sendToSpeak", addr, len+1);
     RS485_SendBuf(COM4,addr,len+1);        
 }
 
