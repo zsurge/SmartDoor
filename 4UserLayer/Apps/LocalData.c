@@ -338,7 +338,7 @@ uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
 
 	//log_d("searchHeaderIndex ret = %d",ret);
 
-	if ( ret ==  NO_FIND_HEAD)
+	if ( index ==  NO_FIND_HEAD)
 	{
 		//log_d("can't find the head index\r\n");
 		return 3;//提示未找到索引
@@ -716,7 +716,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
     
         ret = Bin_Search(gSectorBuff,remainder,head.headData.id);
 
-        log_d("1.Bin_Search = %d\r\n",ret);
+        log_d("1.Bin_Search flash index = %d\r\n",ret);
         
         if(ret != NO_FIND_HEAD)
         {
@@ -743,7 +743,6 @@ int readHead(uint8_t *headBuff,uint8_t mode)
             ret = Bin_Search(gSectorBuff,HEAD_NUM_SECTOR,head.headData.id);
             if(ret != NO_FIND_HEAD)
             {
-                myfree(SRAMCCM,gSectorBuff);
                 return ret;
             }
         }
@@ -765,6 +764,8 @@ void sortHead(HEADINFO_STRU *head,int length)
     HEADINFO_STRU tmp;
 
     memset(&tmp,0x00,sizeof(tmp));
+
+    log_d("sortHead length = %d\r\n",length);
     
     for (int i = 1; i < length; i++)
     {
@@ -904,6 +905,7 @@ uint8_t addHead(uint8_t *head,uint8_t mode)
         gSectorBuff[0].flashAddr = curIndex;
         memcpy(gSectorBuff[0].headData.sn,head,CARD_NO_LEN_BCD);  
 
+        log_d("<<<<<write first recond>>>>>\r\n");
 //        log_d("add = %x,sectorBuff[0].headData.sn = %02x,%02x,%02x,%02x,addr = %d\r\n",addr,gSectorBuff[0].headData.sn[0],gSectorBuff[0].headData.sn[1],gSectorBuff[0].headData.sn[2],gSectorBuff[0].headData.sn[3],gSectorBuff[0].flashAddr);
         
         //写入到存储区域
@@ -1042,10 +1044,10 @@ int delHead(uint8_t *headBuff,uint8_t mode)
 
     log_d("FRAM_Read SUCCESS addr = %x,remainder = %d\r\n",addr,remainder);
     
-    for(i=0;i<remainder;i++)
-    {
-        log_d("add = %x,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",addr,gSectorBuff[i].headData.id,gSectorBuff[i].headData.sn[0],gSectorBuff[i].headData.sn[1],gSectorBuff[i].headData.sn[2],gSectorBuff[i].headData.sn[3],gSectorBuff[i].flashAddr);
-    }    
+//    for(i=0;i<remainder;i++)
+//    {
+//        log_d("add = %x,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",addr,gSectorBuff[i].headData.id,gSectorBuff[i].headData.sn[0],gSectorBuff[i].headData.sn[1],gSectorBuff[i].headData.sn[2],gSectorBuff[i].headData.sn[3],gSectorBuff[i].flashAddr);
+//    }    
     
     log_d("head = %x,last page %x,%x\r\n",head.headData.id,gSectorBuff[0].headData.id,gSectorBuff[remainder-1].headData.id);
 
@@ -1088,6 +1090,8 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     for(i=0;i<multiple;i++)
     {
         addr += i * HEAD_NUM_SECTOR  * HEAD_lEN;
+
+        memset(gSectorBuff,0x00,sizeof(gSectorBuff));
         
         //2.读取第一个卡号和最后一个卡号；
         ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, HEAD_NUM_SECTOR * HEAD_lEN);

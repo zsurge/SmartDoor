@@ -74,7 +74,7 @@ void CreateDataProcessTask(void)
 static void vTaskDataProcess(void *pvParameters)
 {    
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100); /* 设置最大等待时间为100ms */ 
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(50); /* 设置最大等待时间为100ms */ 
     int ret = 0;
     int len = 0;
 
@@ -156,7 +156,7 @@ static void vTaskDataProcess(void *pvParameters)
         
         /* 发送事件标志，表示任务正常运行 */        
         xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4); 
-        vTaskDelay(100); 
+        vTaskDelay(50); 
 
     }
 

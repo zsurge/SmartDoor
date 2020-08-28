@@ -1048,7 +1048,7 @@ uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode)
             return ret;
     	} 
 
-    	log_d("write param success\r\n");
+//    	log_d("write param success\r\n");
 	}
 	else
 	{
@@ -1062,7 +1062,7 @@ uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode)
 
         memcpy (recoIndex, buff,  sizeof(RECORDINDEX_STRU) );  
         
-        log_d("read param success\r\n");        
+//        log_d("read param success\r\n");        
 	}
 
 	myfree(SRAMIN,buff);

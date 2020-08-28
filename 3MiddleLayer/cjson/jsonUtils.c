@@ -446,7 +446,7 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
         return CJSON_PARSE_ERR;
     } 
     
-    cJSON_AddStringToObject(root,"commandCode","1054");
+    cJSON_AddStringToObject(root,"commandCode","3013");
     cJSON_AddStringToObject(root,"deviceCode",gDevBaseParam.deviceCode.deviceSn);
      
     tmpBuf = cJSON_PrintUnformatted(root); 
@@ -527,7 +527,7 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
         
         tmpBuf = cJSON_PrintUnformatted(newroot); 
 
-        log_d("packetBaseJson = %s\r\n",tmpBuf);
+//        log_d("packetBaseJson = %s\r\n",tmpBuf);
 
         if(!tmpBuf)
         {

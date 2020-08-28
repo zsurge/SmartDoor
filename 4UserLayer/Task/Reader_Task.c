@@ -124,7 +124,7 @@ static void vTaskReader(void *pvParameters)
 			/* 使用消息队列实现指针变量的传递 */
 			if(xQueueSend(xCardIDQueue,             /* 消息队列句柄 */
 						 (void *) &ptReaderBuf,             /* 发送结构体指针变量ptReader的地址 */
-						 (TickType_t)30) != pdPASS )
+						 (TickType_t)10) != pdPASS )
 			{
                 xQueueReset(xCardIDQueue);
                 DBG("send card1  queue is error!\r\n"); 
@@ -148,7 +148,7 @@ static void vTaskReader(void *pvParameters)
 			/* 使用消息队列实现指针变量的传递 */
 			if(xQueueSend(xCardIDQueue,             /* 消息队列句柄 */
 						 (void *) &ptReaderBuf,             /* 发送结构体指针变量ptReader的地址 */
-						 (TickType_t)30) != pdPASS )
+						 (TickType_t)10) != pdPASS )
 			{
                 xQueueReset(xCardIDQueue);
                 DBG("send card2  queue is error!\r\n"); 

@@ -89,6 +89,7 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf ); //删除用户信息
 //static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf ); //添加单个用户
 static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf ); //解除绑定
 static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf ); //设置本地时间
+static SYSERRORCODE_E SetLocalTime_Elevator( uint8_t* msgBuf );
 static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf ); //设置本地SN，MQTT用
 static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf ); //删除卡号
 //static SYSERRORCODE_E DelUserId( uint8_t* msgBuf ); //删除用户
@@ -152,7 +153,8 @@ const CMD_HANDLE_T CmdList[] =
     {"3011", EnableDev}, //同绑定
     {"3012", DisableDev},//同解绑
     {"1054", SetLocalTime}, 
-    {"3013", getRemoteTime},
+    {"3013", SetLocalTime_Elevator},
+    {"30131", getRemoteTime},
 };
 
 
@@ -250,7 +252,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
    { 
        topicString.cstring = gDevBaseParam.mqttTopic.publish;       //属性上报 发布
 
-       log_d("payloadlen = %d,payload = %s",payload_out_len,payload_out);
+       log_d("payloadlen = %d,payload = %s\r\n",payload_out_len,payload_out);
 
        len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, payload_out, payload_out_len);//发布消息
        rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
@@ -376,6 +378,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     asc2bcd(cardNo, tmp, CARD_USER_LEN, 1); 
 
     cardNo[0] = 0x00;//韦根26最高位无数据
+    
     log_d("add cardNo=  %02x, %02x, %02x, %02x\r\n",cardNo[0],cardNo[1],cardNo[2],cardNo[3]);
     
     ret = addHead(cardNo,CARD_MODE);  
@@ -873,8 +876,10 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
         log_d("%d / %d :cardNo = %s\r\n",multipleCardNum,i+1,cardArray[i]);      
         memset(tmp,0x00,sizeof(tmp));
         asc2bcd(tmp, cardArray[i], CARD_NO_LEN, 1);
+        
         tmp[0] = 0x00;//韦根26最高位无数据
-        log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
+        
+//        log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
 
         ret = addHead(tmp,CARD_MODE);
         
@@ -887,6 +892,8 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
             my_free(cardArray);
             
             result = FLASH_W_ERR;
+
+            log_e("add head error\r\n");
         }  
 
         memset(buf,0x00,sizeof(buf));    
@@ -1221,6 +1228,30 @@ static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf )
     return result;
 
 }
+
+//设置本地时间
+static SYSERRORCODE_E SetLocalTime_Elevator( uint8_t* msgBuf )
+{
+    SYSERRORCODE_E result = NO_ERR;
+    uint8_t localTime[32] = {0};
+    
+    if(!msgBuf)
+    {
+        return STR_EMPTY_ERR;
+    }
+
+    strcpy((char *)localTime,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"time",1));
+
+    //保存本地时间
+    log_d("server time is %s\r\n",localTime);
+
+    bsp_ds1302_mdifytime(localTime);
+
+
+    return result;
+
+}
+
 
 //设置本地SN，MQTT用
 static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
