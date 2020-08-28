@@ -25,6 +25,9 @@ extern volatile uint32_t g500usTimerUART;
 extern volatile uint32_t g500usTimerRS485;
 
 extern  volatile uint32_t gPlayTimer;
+extern  volatile uint32_t gFollowTimer;
+extern  volatile uint32_t gRetrogradeTimer;
+
 
 
 

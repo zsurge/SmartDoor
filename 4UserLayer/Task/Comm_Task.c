@@ -537,7 +537,7 @@ void queryStatusResponse(void)
     
             if(!gPlayTimer)
             {
-                gPlayTimer = 20000;
+                gPlayTimer = 18000;
                 sendToSpeak((uint8_t *)alarmInfo[RETENTION_TIPS]);   
             }
             break;              
@@ -552,10 +552,22 @@ void queryStatusResponse(void)
             break;
         case RETROGRADE_ALARM:
             writeLog((char *)hostStateInfo[RETROGRADE_ALARM]);  
-            log_d(" 4----ÄæÐÐ----\r\n");            
+            log_d(" 4----ÄæÐÐ----\r\n");  
+
+            if(!gRetrogradeTimer)
+            {
+                gRetrogradeTimer = 18000;
+                sendToSpeak((uint8_t *)alarmInfo[RETROGRADE_TIPS]);   
+            }
+            
             break;
         case FOLLOWING_ALARM:
             writeLog((char *)hostStateInfo[FOLLOWING_ALARM]);
+            if(!gFollowTimer)
+            {
+                gFollowTimer = 18000;
+                sendToSpeak((uint8_t *)alarmInfo[FOLLOWING_TIPS]);   
+            }            
             
             log_d(" 4----Î²Ëæ----\r\n");
             break;
