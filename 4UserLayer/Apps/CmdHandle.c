@@ -333,7 +333,7 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
 
     mqttSendData(buf,len);
 
-    TestFlash(CARD_MODE);
+//    TestFlash(CARD_MODE);
     
 	return result;
 }

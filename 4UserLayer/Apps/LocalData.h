@@ -206,6 +206,7 @@ int delHead(uint8_t *headBuff,uint8_t mode);
 //添加删除卡号对应的索引位置(想法有问题，暂不实现)
 uint8_t addDelHead(int index);
 
+//uint8_t addHeadID(uint8_t *head,uint8_t mode);
 
 
 
