@@ -141,7 +141,7 @@ void bsp_ds1302_mdifytime ( uint8_t* descTime ) //≥ı ºªØ1302
 	memcpy ( tmp,descTime+11,2 );
 	buf[2] = IntToBCD ( atoi ( (const char*)tmp ) );
 
-	memset ( tmp,0x00,sizeof ( tmp ) );
+	memset ( tmp,0x00,sizeof ((const char*)tmp ) );
 	memcpy ( tmp,descTime+14,2 );
 	buf[1] = IntToBCD ( atoi ( (const char*)tmp ) );
 

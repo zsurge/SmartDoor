@@ -51,10 +51,9 @@
 #include "cmdhandle.h"
 #include "version.h"
 #include "mqtt_app.h"
-#include "FloorDataProc.h"
+
 
 //TASKÎÄ¼þ
-#include "BarCode_Task.h"
 #include "Comm_Task.h"
 #include "HandShake_Task.h"
 #include "Hc595_Task.h"
@@ -77,7 +76,7 @@
 #include "croutine.h"
 #include "semphr.h"
 #include "event_groups.h"
-//#include "FreeRTOS_CLI.h"
+
 
 
 

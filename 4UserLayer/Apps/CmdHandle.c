@@ -78,16 +78,12 @@ static SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf ); //对设备进行升级
 static SYSERRORCODE_E UpgradeAck ( uint8_t* msgBuf ); //升级应答
 static SYSERRORCODE_E EnableDev ( uint8_t* msgBuf ); //开启设备
 static SYSERRORCODE_E DisableDev ( uint8_t* msgBuf ); //关闭设备
-//static SYSERRORCODE_E SetJudgeMode ( uint8_t* msgBuf ); //设置识别模式
 static SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf ); //获取设备信息
 static SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf ); //获取模板参数
 static SYSERRORCODE_E GetServerIp ( uint8_t* msgBuf ); //获取模板参数
 static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf ); //获取用户信息
 static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf ); //远程呼梯
-static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf ); //PC端呼梯
 static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf ); //删除用户信息
-//static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf ); //添加单个用户
-//static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf ); //解除绑定
 static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf ); //设置本地时间
 static SYSERRORCODE_E SetLocalTime_Elevator( uint8_t* msgBuf );
 static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf ); //设置本地SN，MQTT用
@@ -106,32 +102,6 @@ typedef struct
 	cmd_fun  fun_ptr;               /* 函数指针 */
 } CMD_HANDLE_T;
 
-//const CMD_HANDLE_T CmdList[] =
-//{
-//	{"201",  OpenDoor},
-//	{"1006", AbnormalAlarm},
-//    {"1010", DelUserId},
-//	{"1012", AddCardNo},
-//	{"1013", DelCardNoAll},
-//	{"1015", AddSingleUser},
-//	{"1016", UpgradeDev},
-//	{"1017", UpgradeAck},
-//	{"1024", SetJudgeMode},
-//	{"1026", GetDevInfo},  
-//	{"1027", DelCardSingle},         
-//	{"3001", SetLocalSn},
-//    {"3002", GetServerIp},
-//    {"3003", GetTemplateParam},
-//    {"1050", DownLoadCardID},   
-//    {"3005", RemoteOptDev},        
-//    {"3006", ClearUserInof},   
-//    {"3009", UnbindDev},  
-//    {"3010", PCOptDev},
-//    {"3011", EnableDev}, //同绑定
-//    {"3012", DisableDev},//同解绑
-//    {"3013", SetLocalTime}, 
-//    {"30131", getRemoteTime},
-//};
 
 const CMD_HANDLE_T CmdList[] =
 {
@@ -149,7 +119,6 @@ const CMD_HANDLE_T CmdList[] =
     {"1050", DownLoadCardID},   
     {"3005", RemoteOptDev},        
     {"1019", ClearUserInof},   
-    {"3010", PCOptDev},
     {"3011", EnableDev}, //同绑定
     {"3012", DisableDev},//同解绑
     {"1054", SetLocalTime}, 
@@ -1009,124 +978,6 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
 
         mqttSendData(buf,len); 
     }    
-    
-    return result;
-
-}
-
-//PC端呼梯
-static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
-{
-    SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_TEMP_LEN] = {0};
-    uint8_t tmp[8] = {0};
-    uint8_t purposeLayer[1] = {0};    
-    uint16_t len = 0;
-
-    USERDATA_STRU userData = {0};
-    memset(&userData,0x00,sizeof(USERDATA_STRU));
-    
-    if(!msgBuf)
-    {
-        return STR_EMPTY_ERR;
-    }
-
-    memset(tmp,0x00,sizeof(tmp));
-    strcpy((char *)tmp,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"purposeLayer",1));
-    
-    purposeLayer[0] = atoi((const char*)tmp);
-    
-    log_d("tmp = %s,purposeLayer[0] = %d\r\n",tmp, purposeLayer[0]);
-    
-    memset(buf,0x00,sizeof(buf));
-    result = modifyJsonItem(msgBuf,"status","1",1,buf);
-
-    if(result != NO_ERR)
-    {
-        return result;
-    }
-    
-
-    //这里需要发消息到消息队列，进行呼梯
-    SendToQueue(purposeLayer,1,AUTH_MODE_REMOTE);
-
-    len = strlen((const char*)buf);
-
-    log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
-
-    mqttSendData(buf,len); 
-    
-//    userData.head = TABLE_HEAD;
-//    userData.authMode =2;
-//    userData.defaultFloor = 9;
-//    userData.cardState = CARD_VALID;
-//    memcpy(userData.cardNo,"89E1E35D",CARD_NO_LEN);
-//    memcpy(userData.userId,"00000788",USER_ID_LEN);
-//    strcpy(userData.accessFloor,"7,8,9");    
-//    memcpy(userData.startTime,"2020-01-01",TIME_LENGTH);
-//    memcpy(userData.endTime,"2030-01-01",TIME_LENGTH);    
-//    
-//    writeUserData(&userData,CARD_MODE);
-//    
-//    log_d("===============TEST==================\r\n");
-//    len = readUserData("12345688",CARD_MODE,&userData);
-
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.cardState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-//    log_d("===============TEST==================\r\n");
-//    memset(&userData,0x00,sizeof(USERDATA_STRU));
-//    len = readUserData("00020419",USER_MODE,&userData);
-//    
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.cardState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-
-log_d("===============CARD_MODE==================\r\n");
-TestFlash(CARD_MODE);
-
-
-
-
-
-log_d("===============CARD_DEL_MODE==================\r\n");
-TestFlash(CARD_DEL_MODE);
-
-
-
-
-
-
-
-
-
-
-//    userData.userState = 1;
-//    len = modifyUserData(userData,USER_MODE);
-
-//    log_d("==============TEST===================\r\n");
-//    userData.userState = 0;
-//    memset(&userData,0x00,sizeof(userData));
-//    len = readUserData("00010359",USER_MODE,&userData);
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.userState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);    
-
     
     return result;
 

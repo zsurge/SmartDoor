@@ -28,16 +28,16 @@
 #include "eth_cfg.h"
 #include "cJSON.h"
 #include "errorcode.h"
-#include "calcDevNO.h"
+
 #include "malloc.h"
 #include "bsp_MB85RC128.h"
 #include "bsp_ds1302.h"
 
 #define CARD_NO_LEN_ASC     8       //卡号ASC码长度，状态(1)+卡号(3)
 #define CARD_NO_LEN_BCD     (CARD_NO_LEN_ASC/2) //卡号BCD码长度
-#define HEAD_lEN 8                  //每条记录占8个字节,4字节卡号，4字节flash中索引
+#define HEAD_lEN 4                  //每条记录4字节卡号，
 #define DEL_HEAD_lEN 4              //每条记录占4个字节,4字节为已删除卡号索引(M*512+R)
-#define MAX_HEAD_RECORD     15360   //最大15000条记录
+#define MAX_HEAD_RECORD     30720   //最大30720条记录
 #define SECTOR_SIZE         4096    //每个扇区大小
 
 #define MAX_HEAD_DEL_CARDNO     512   //最大可以在删除256张卡
@@ -49,7 +49,7 @@
 
 
 #define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //30个扇区
-#define HEAD_NUM_SECTOR          (SECTOR_SIZE/HEAD_lEN) //每个扇区存储512个卡号
+#define HEAD_NUM_SECTOR          (SECTOR_SIZE/HEAD_lEN) //每个扇区存储1024个卡号
 
 //改为存储在铁电
 #define CARD_NO_HEAD_ADDR   0x0000
@@ -91,10 +91,9 @@ typedef union
 typedef struct CARDHEADINFO
 {
     HEADTPYE headData;  //卡号
-    uint32_t flashAddr; //在FLASH中的索引,其地址=索引*固定卡号内容长度+基地址 
 }HEADINFO_STRU;
 
-extern HEADINFO_STRU gSectorBuff[512];
+extern HEADINFO_STRU gSectorBuff[1024];
 
 
 

@@ -44,15 +44,7 @@ FLASH操作思路：
 #include "ini.h"
 
 
-#define CARD_USER_LEN              (8)
-#define FLOOR_ARRAY_LENGTH         (64) //每个普通用户最多64层权限
-#define TIME_LENGTH                (10)
-#define TIMESTAMP_LENGTH           (10)
-#define RESERVE_LENGTH             (4) //预留空间 为了对齐，补足一个扇区可以整除的字节数
-
-
-
-
+#define CARD_USER_LEN              (4)
 
 ////设置卡状态为0，删除卡
 #define CARD_DEL                    0
@@ -60,9 +52,6 @@ FLASH操作思路：
 #define USER_DEL                    CARD_DEL
 #define USER_VALID                  CARD_VALID
 #define TABLE_HEAD                  0xAA
-
-
-
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -75,63 +64,11 @@ FLASH操作思路：
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-//extern volatile uint16_t gCurCardHeaderIndex;    //卡号索引
-//extern volatile uint16_t gCurUserHeaderIndex;    //用户ID索引
-//extern volatile uint16_t gDelCardHeaderIndex;    //已删除卡号索引
-//extern volatile uint16_t gDelUserHeaderIndex;    //已删除用户ID索引
-//extern volatile uint16_t gCurRecordIndex;
 
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
-
-typedef enum 
-{
-  ISFIND_NO = 0,
-  ISFIND_YES 
-}ISFIND_ENUM;
-
-
-
-
-
-#pragma pack(1)
-typedef struct USERDATA
-{
-    uint8_t head;                                   //数据头
-    uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
-    uint8_t cardState;                              //卡状态 有效/已删除/黑名单/临时卡    
-    uint8_t platformType;                           //平台类型，第三方平台、博思高平台等
-    uint8_t cardNo[CARD_USER_LEN+1];                  //卡号
-    uint8_t brushCardTime[TIME_LENGTH+1];               //刷卡时间
-//    uint8_t startTime[TIME_LENGTH+1];                 //账户有效时间
-//    uint8_t endTime[TIME_LENGTH+1];                   //账户结束时间    
-//    uint8_t timeStamp[TIME_LENGTH+1];                 //二维码时间戳
-    uint8_t reserve[RESERVE_LENGTH+1];                //预留空间 
-    uint8_t crc;                                    //校验值 head~reseve
-}USERDATA_STRU;
-#pragma pack()
-
-extern USERDATA_STRU gUserDataStru;
-
-
-
-
-#if 0
-uint8_t writeUserData(USERDATA_STRU *userData,uint8_t mode);
-
-uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
-
-uint8_t modifyUserData(USERDATA_STRU *userData,uint8_t mode);
-
-uint8_t writeZeaoHead (uint8_t multiple,uint16_t remainder,HEADINFO_STRU *card);
-
-#endif
-
-
-
-
 
 //add 2020.07.14
 //读取/查找卡号

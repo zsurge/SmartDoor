@@ -32,7 +32,7 @@ TEMPLATE_PARAM_STRU gtemplateParam;
 DEV_BASE_PARAM_STRU gDevBaseParam;
 RECORDINDEX_STRU gRecordIndex;
 
-HEADINFO_STRU gSectorBuff[512] = {0};
+HEADINFO_STRU gSectorBuff[1024] = {0};
 
 
 static uint8_t opParam(void *Param,uint8_t mode,uint32_t len,uint32_t addr);

@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include "cJSON.h"
 #include "version.h"
-#include "calcDevNO.h"
 #include "bsp_rtc.h"
 #include "LocalData.h"
 #include "malloc.h"
@@ -138,10 +137,6 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf);
 uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num);
 
 
-//½âÎöQRCODEÊý¾Ý
-uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
-
-uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
 
 //add 08.24
 uint8_t packetCard(uint8_t *cardID,uint8_t *descJson);
