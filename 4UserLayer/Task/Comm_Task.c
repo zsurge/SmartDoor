@@ -198,7 +198,7 @@ const char * const alarmInfo[] =
 
 static FROMHOST_STRU rxFromHost;
 static char gChannel = 0;
-static DEV_STATE_STRU gDevState,gAbnormalState;
+static DEV_STATE_STRU gDevState;
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -580,26 +580,7 @@ void queryStatusResponse(void)
             
             log_d(" 4----驱动器通信异常----\r\n");
             break;          
-    }
-
-//    if(gAbnormalState.curState != gAbnormalState.preState)
-//    {
-//        gAbnormalState.preState = gAbnormalState.curState;
-
-//        switch (gAbnormalState.curState)
-//        {
-//            case RETROGRADE_ALARM:
-//                sendToSpeak((uint8_t *)alarmInfo[RETROGRADE_TIPS]);
-//                break;
-//            case FOLLOWING_ALARM:
-//                sendToSpeak((uint8_t *)alarmInfo[FOLLOWING_TIPS]);
-//                break;
-//            case DEV_LOST_CONNECT_ALARM:
-//                sendToSpeak((uint8_t *)alarmInfo[LOST_CONNECT]);
-//                break; 
-//        }
-//    }
-    
+    }    
 }
 
 void setDevParamResponse(void)

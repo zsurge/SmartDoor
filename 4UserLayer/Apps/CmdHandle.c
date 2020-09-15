@@ -78,7 +78,7 @@ static SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf ); //对设备进行升级
 static SYSERRORCODE_E UpgradeAck ( uint8_t* msgBuf ); //升级应答
 static SYSERRORCODE_E EnableDev ( uint8_t* msgBuf ); //开启设备
 static SYSERRORCODE_E DisableDev ( uint8_t* msgBuf ); //关闭设备
-static SYSERRORCODE_E SetJudgeMode ( uint8_t* msgBuf ); //设置识别模式
+//static SYSERRORCODE_E SetJudgeMode ( uint8_t* msgBuf ); //设置识别模式
 static SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf ); //获取设备信息
 static SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf ); //获取模板参数
 static SYSERRORCODE_E GetServerIp ( uint8_t* msgBuf ); //获取模板参数
@@ -87,7 +87,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf ); //远程呼梯
 static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf ); //PC端呼梯
 static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf ); //删除用户信息
 //static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf ); //添加单个用户
-static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf ); //解除绑定
+//static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf ); //解除绑定
 static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf ); //设置本地时间
 static SYSERRORCODE_E SetLocalTime_Elevator( uint8_t* msgBuf );
 static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf ); //设置本地SN，MQTT用
@@ -414,7 +414,6 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t tmp[CARD_NO_BCD_LEN] = {0};
     uint16_t len = 0;
-    uint8_t rRet=1;
     int wRet=1;
     uint8_t num=0;
     int i = 0;  
@@ -655,11 +654,12 @@ SYSERRORCODE_E DisableDev ( uint8_t* msgBuf )
 
 }
 
-SYSERRORCODE_E SetJudgeMode ( uint8_t* msgBuf )
-{
-	SYSERRORCODE_E result = NO_ERR;
-	return result;
-}
+//SYSERRORCODE_E SetJudgeMode ( uint8_t* msgBuf )
+//{
+//	SYSERRORCODE_E result = NO_ERR;
+//	
+//	return result;
+//}
 
 SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
 {
@@ -697,7 +697,6 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
 static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-	uint8_t rRet = 1;
 	int wRet = 1;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t cardNo[CARD_USER_LEN] = {0};
@@ -1139,11 +1138,9 @@ TestFlash(CARD_DEL_MODE);
 static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_TEMP_LEN] = {0};
-    uint16_t len = 0;
-
     if(!msgBuf)
     {
+    
         return STR_EMPTY_ERR;
     }
     
@@ -1156,6 +1153,7 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
 
 
 //解除绑定
+#if 0
 static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
@@ -1202,7 +1200,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
     return result;
 
 }
-
+#endif 
 
 
 

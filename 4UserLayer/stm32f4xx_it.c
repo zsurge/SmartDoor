@@ -86,8 +86,6 @@ void HardFault_Handler(void)
 //  {
 //  }
 
-	u32 i;
-	u8 t=0;
 
 	static u32 temp=8;
 	

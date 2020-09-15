@@ -25,12 +25,9 @@
 #include "DataProcess_Task.h"
 #include "CmdHandle.h"
 #include "bsp_uart_fifo.h"
-#include "ini.h"
+#include "jsonUtils.h"
 #include "malloc.h"
 #include "tool.h"
-
-
-static void test(void);
 
 /*----------------------------------------------*
  * ∫Í∂®“Â                                       *

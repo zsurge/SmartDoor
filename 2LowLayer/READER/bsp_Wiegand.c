@@ -74,7 +74,7 @@ void EXTI9_5_IRQHandler ( void )
 	if ( EXTI_GetITStatus ( WG1_IN_D0_EXTI ) != RESET ) //D0
 	{
 		//韦根取D0管脚数据
-		delay_us(30); //消抖
+		vTaskDelay(30); //消抖
 		if ( WeiGen1D0==0 )
 		{
 			WeigenInD0 ( WeiGen1 );
@@ -88,7 +88,7 @@ void EXTI9_5_IRQHandler ( void )
 	if ( EXTI_GetITStatus ( WG1_IN_D1_EXTI ) != RESET ) //D1
 	{
 		//韦根取D1管脚数据
-		delay_us(30); //消抖
+		vTaskDelay(30); //消抖
 
 		if ( WeiGen1D1==0 )
 		{
@@ -103,7 +103,7 @@ void EXTI9_5_IRQHandler ( void )
 	if ( EXTI_GetITStatus ( WG2_IN_D0_EXTI ) != RESET ) //D0
 	{
 		//韦根取D0管脚数据
-		delay_us(30); //消抖
+		vTaskDelay(30); //消抖
 		if ( WeiGen2D0==0 )
 		{
 			WeigenInD0 ( WeiGen2 );
@@ -117,7 +117,7 @@ void EXTI9_5_IRQHandler ( void )
 	if ( EXTI_GetITStatus ( WG2_IN_D1_EXTI ) != RESET ) //D1
 	{
 		//韦根取D1管脚数据
-		delay_us(30); //消抖
+		vTaskDelay(30); //消抖
 
 		if ( WeiGen2D1==0 )
 		{

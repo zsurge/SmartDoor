@@ -23,6 +23,13 @@
 #include <string.h>
 #include <stdio.h>
 #include "cJSON.h"
+#include "version.h"
+#include "calcDevNO.h"
+#include "bsp_rtc.h"
+#include "LocalData.h"
+#include "malloc.h"
+#include "bsp_ds1302.h"
+#include "deviceinfo.h"
 
 
 
@@ -43,6 +50,20 @@
 #define TIMESTAMP_LEN           (10)
 
 
+
+//设备在线状态
+#define ON_LINE                 1
+#define OFF_LINE                (-1)
+
+//呼梯状态：1、成功 0/2失败，3 QR设备已禁用  
+#define CALL_OK                 1
+#define CALL_NG                 2
+#define CALL_ERR                0
+#define QR_DISABLE              3
+
+//进出方向 1、进 2、出
+#define DIRECTION_IN            1
+#define DIRECTION_OUT           2
 
 
 
@@ -113,14 +134,17 @@ SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff);
 
 SYSERRORCODE_E getTimePacket(uint8_t *descBuf);
 
-
-
 //获取JSON数组
 uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num);
 
 
+//解析QRCODE数据
+uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
 
+uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
 
+//add 08.24
+uint8_t packetCard(uint8_t *cardID,uint8_t *descJson);
 
 #endif
 

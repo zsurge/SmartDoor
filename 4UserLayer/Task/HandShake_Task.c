@@ -58,9 +58,9 @@ static void DisplayDevInfo (void);
 
 static void vTaskHandShake(void *pvParameters)
 {
-    uint32_t i_boot_times = NULL;
-    char *c_old_boot_times, c_new_boot_times[12] = {0};
-    uint8_t bcdbuf[6] = {0};  
+//    uint32_t i_boot_times = NULL;
+//    char *c_old_boot_times, c_new_boot_times[12] = {0};
+//    uint8_t bcdbuf[6] = {0};  
 
 
 //    log_d("start vTaskHandShake\r\n");
@@ -86,7 +86,7 @@ static void vTaskHandShake(void *pvParameters)
 
     //读取模板数据
 
-//    eraseUserDataAll();
+    //eraseUserDataAll();
     
     initRecordIndex();
     

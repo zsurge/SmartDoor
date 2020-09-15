@@ -25,7 +25,6 @@
 #include "string.h"
 #include "deviceInfo.h"
 #include "tool.h"
-#include "LocalData.h"
 #include "eth_cfg.h"
 #include "cJSON.h"
 #include "errorcode.h"
@@ -34,69 +33,109 @@
 #include "bsp_MB85RC128.h"
 #include "bsp_ds1302.h"
 
+#define CARD_NO_LEN_ASC     8       //卡号ASC码长度，状态(1)+卡号(3)
+#define CARD_NO_LEN_BCD     (CARD_NO_LEN_ASC/2) //卡号BCD码长度
+#define HEAD_lEN 8                  //每条记录占8个字节,4字节卡号，4字节flash中索引
+#define DEL_HEAD_lEN 4              //每条记录占4个字节,4字节为已删除卡号索引(M*512+R)
+#define MAX_HEAD_RECORD     15360   //最大15000条记录
+#define SECTOR_SIZE         4096    //每个扇区大小
+
+#define MAX_HEAD_DEL_CARDNO     512   //最大可以在删除256张卡
+
+
+#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //120K
+#define CARD_DEL_HEAD_SIZE  (DEL_HEAD_lEN*MAX_HEAD_DEL_CARDNO)   //2K
 
 
 
-//设备在线状态
-#define ON_LINE                 1
-#define OFF_LINE                (-1)
+#define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //30个扇区
+#define HEAD_NUM_SECTOR          (SECTOR_SIZE/HEAD_lEN) //每个扇区存储512个卡号
 
-//呼梯状态：1、成功 0/2失败，3 QR设备已禁用  
-#define CALL_OK                 1
-#define CALL_NG                 2
-#define CALL_ERR                0
-#define QR_DISABLE              3
+//改为存储在铁电
+#define CARD_NO_HEAD_ADDR   0x0000
+#define CARD_DEL_HEAD_ADDR  (CARD_NO_HEAD_ADDR+CARD_NO_HEAD_SIZE)
 
-//进出方向 1、进 2、出
-#define DIRECTION_IN            1
-#define DIRECTION_OUT           2
+
+//基本参数存储长度及地址
+#define DEVICE_BASE_PARAM_SIZE (896)
+#define DEVICE_BASE_PARAM_ADDR (CARD_DEL_HEAD_ADDR+CARD_DEL_HEAD_SIZE)
+
+
+//表头的索引存储长度及地址
+#define RECORD_INDEX_SIZE   (128)
+#define RECORD_INDEX_ADDR   (DEVICE_BASE_PARAM_ADDR+DEVICE_BASE_PARAM_SIZE)
+
+//参数的存储地址
+#define DEVICE_TEMPLATE_PARAM_SIZE   (1024*2)
+#define DEVICE_TEMPLATE_PARAM_ADDR  (RECORD_INDEX_ADDR+RECORD_INDEX_SIZE) //参数存储分配4K空间
+
+
+
+#define CARD_NO_DATA_ADDR   0X500000
+#define USER_ID_DATA_ADDR   0X900000
+
+#define DATA_SECTOR_NUM     ((USER_ID_DATA_ADDR-CARD_NO_DATA_ADDR)/SECTOR_SIZE)
+
+#define CARD_MODE                   1 //卡模式
+#define CARD_DEL_MODE               2 //删除卡模式
+#define NO_FIND_HEAD                (-1)
+
+
+//表头数据
+typedef union
+{
+	uint32_t id;        //卡号
+	uint8_t sn[4];    //卡号按字符
+}HEADTPYE;
+
+typedef struct CARDHEADINFO
+{
+    HEADTPYE headData;  //卡号
+    uint32_t flashAddr; //在FLASH中的索引,其地址=索引*固定卡号内容长度+基地址 
+}HEADINFO_STRU;
+
+extern HEADINFO_STRU gSectorBuff[512];
+
+
+
 
 typedef uint8_t(*CallBackParam)(void * struParam,uint8_t mode,uint32_t len,uint32_t addr);
 
 void readTemplateData(void);
 
-
 void RestoreDefaultSetting(void);
 
 void SystemUpdate(void);
 
-//void readDevState(void);
-
 void SaveDevState(uint32_t     state);
 
-//void ReadLocalDevSn(void);
 
 
-uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
-
-//add 08.24
-uint8_t packetCard(uint8_t *cardID,uint8_t *descJson);
-
-//解析QRCODE数据
-uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
 //保存模板信息
 SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
 
-
-
-
 //add 2020.07.06
 void initTemplateParam(void);
-void ClearTemplateParam(void);
 uint8_t optTemplateParam(void *stParam,uint8_t mode,uint32_t len,uint32_t addr);
 
 void initDevBaseParam(void);
-void ClearDevBaseParam(void);
 uint8_t optDevBaseParam(void *stParam,uint8_t mode,uint32_t len,uint32_t addr);
 
 void initRecordIndex(void);
-void ClearRecordIndex(void);
 uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode);
 
 
-
+void ClearDevBaseParam(void);
+void ClearTemplateParam(void);
+void ClearRecordIndex(void);
 void clearTemplateFRAM(void);
 
+
+void eraseHeadSector(void);
+void eraseDataSector(void);
+void eraseUserDataAll(void);
+
+void TestFlash(uint8_t mode);
 
 
 #endif

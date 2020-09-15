@@ -28,6 +28,7 @@
 #include "bsp_dipSwitch.h"
 #include "tool.h"
 #include "LocalData.h"
+#include "bsp_Wiegand.h"
 
 
 
@@ -98,11 +99,7 @@ void reverseArray(uint8_t *array)
 static void vTaskReader(void *pvParameters)
 { 
     CARD_TYPE cardDev1,cardDev2;    
-    BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
-    int ret = 0;
-
-    READER_BUFF_STRU *ptReaderBuf = &gReaderMsg;  
-    
+    READER_BUFF_STRU *ptReaderBuf = &gReaderMsg;     
 
     while(1)
     {        
