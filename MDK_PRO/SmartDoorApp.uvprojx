@@ -83,7 +83,7 @@
             <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>1</RunUserProg2>
             <UserProg1Name>fromelf --bin -o "$L@L.bin" "$L@L.axf"</UserProg1Name>
-            <UserProg2Name>AutoRenameByVersion.exe ..\7Bin\ElevatorControlAPP.bin ..\4UserLayer\Version.c ..\Log\ModifyRecords.txt  ElevatorControl</UserProg2Name>
+            <UserProg2Name>AutoRenameByVersion.exe ..\7Bin\SmartDoorApp.bin ..\4UserLayer\Version.c ..\Log\ModifyRecords.txt  SmartDoorApp</UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>1</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
