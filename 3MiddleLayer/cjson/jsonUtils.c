@@ -82,6 +82,8 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
     if (!root)  
     {  
         cJSON_Delete(root);
+        my_free(tmpBuf);
+        tmpBuf=NULL;        
         log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
         return CJSON_PARSE_ERR;
     } 
@@ -104,6 +106,7 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
     {
         cJSON_Delete(root);
          my_free(tmpBuf);
+        tmpBuf=NULL;        
         log_d("cJSON_PrintUnformatted error \r\n");
         return CJSON_FORMAT_ERR;
     }    
@@ -116,6 +119,7 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
     cJSON_Delete(root);
 
     my_free(tmpBuf);
+    tmpBuf=NULL;
     
     return NO_ERR;
 
@@ -141,7 +145,9 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
 *****************************************************************************/
 uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSubitem)
 {
-	static uint8_t value[JSON_ITEM_MAX_LEN] = {0};
+//	static uint8_t value[JSON_ITEM_MAX_LEN] = {0};
+	uint8_t value[JSON_ITEM_MAX_LEN] = {0};
+	
 	cJSON* root,*json_item,*dataObj;
 	
 
@@ -288,6 +294,8 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
     cJSON_Delete(newroot);
 
     my_free(tmpBuf);
+    tmpBuf=NULL;        
+    
 
     return result;
 }
@@ -419,6 +427,7 @@ SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff)
     cJSON_Delete(newroot);
 
     my_free(tmpBuf);
+    tmpBuf=NULL;        
     
     return result;    
 }
@@ -460,6 +469,7 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
     cJSON_Delete(root);
 
     my_free(tmpBuf);
+    tmpBuf=NULL;        
 
     return result;
 }
@@ -468,7 +478,7 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
 
 uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
 {
-    static uint8_t value[256] = {0};
+    static uint8_t value[200] = {0};
     
 	cJSON* root,*newroot,*json_cmdCode,*json_ownerId;
     char *tmpBuf;
@@ -482,6 +492,8 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
         cJSON_Delete(root);        
         cJSON_Delete(newroot);
         my_free(tmpBuf);
+        tmpBuf=NULL;        
+        
 		return NULL;
 	}
 	else
@@ -499,6 +511,7 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
             cJSON_Delete(root);
             cJSON_Delete(newroot);
             my_free(tmpBuf);            
+            tmpBuf=NULL;        
     		return NULL;
         }
 
@@ -529,6 +542,8 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
             cJSON_Delete(root);
             cJSON_Delete(newroot);      
             my_free(tmpBuf);
+            tmpBuf=NULL;        
+            
             return NULL;
         }    
 
@@ -539,15 +554,13 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
     my_free(tmpBuf);
 	cJSON_Delete(root);
     cJSON_Delete(newroot);
+    tmpBuf=NULL;  
     
     return value;    
 }
 
-
-
-uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num)
-{
-    static uint8_t** result; 
+void GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num,uint8_t descBuff[][8])
+{    
     cJSON* root,*json_item;
     cJSON* arrayElement;
     int tmpArrayNum = 0;
@@ -559,7 +572,106 @@ uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *nu
     {
         log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
         cJSON_Delete(root);
-        return NULL;
+        my_free(root);
+          return ;      
+        //return NULL;
+    }
+    else
+    {
+        //根据协议，默认所有的子项是data
+        json_item = cJSON_GetObjectItem ( root, "cardNo" );  
+        
+        if( json_item->type == cJSON_Array )
+        {
+            tmpArrayNum = cJSON_GetArraySize(json_item);
+            
+            log_d("cardArrayNum = %d\r\n",tmpArrayNum);
+            
+            //每个人最多20张卡
+            if(tmpArrayNum > 20)
+            {
+                tmpArrayNum = 20;
+            }
+
+            *num = tmpArrayNum;           
+         
+
+            for(i=0;i<tmpArrayNum;i++)
+            {
+                arrayElement = cJSON_GetArrayItem(json_item, i);                 
+                strcpy (descBuff[i], arrayElement->valuestring ); 
+                log_d("result :%d = %s\r\n",i,descBuff[i]); 
+            }
+
+        }
+        else if( json_item->type == cJSON_String )
+        {
+            //一般走到这里，卡号就是空的
+            if(strlen((const char*)json_item->valuestring) == 0)
+            {
+                 *num = 0;
+                log_d("card no is empty \r\n");
+                cJSON_Delete(root);
+                my_free(root);
+                
+                return ;      
+            }
+        
+            tmpArrayNum = 1;
+            *num = tmpArrayNum;
+
+            
+			if ( strlen ( json_item->valuestring ) > 8 )
+			{
+				memcpy ( descBuff[0], json_item->valuestring,8 );
+			}
+			else
+			{
+			    strcpy (descBuff[0], json_item->valuestring ); 
+			}
+
+			log_d ( "json_item =  %s\r\n",descBuff[0]);
+
+            
+            
+        }
+        else
+        {
+            *num = 0;
+            log_d ( "can't parse json buff\r\n" );
+            cJSON_Delete(root);
+            my_free(root);
+            
+          return ;      
+        //return NULL;
+        }
+        
+    } 
+    
+    cJSON_Delete(root);
+    my_free(root);
+}
+
+#if 0
+void GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num,uint8_t** descBuff)
+{
+//    static uint8_t** result; 
+    uint8_t** result; 
+    
+    cJSON* root,*json_item;
+    cJSON* arrayElement;
+    int tmpArrayNum = 0;
+    int i = 0;
+    
+    root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
+    
+    if ( !root )
+    {
+        log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+        cJSON_Delete(root);
+        my_free(root);
+          return ;      
+        //return NULL;
     }
     else
     {
@@ -582,10 +694,19 @@ uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *nu
 
             if(result == NULL)
             {
-                 *num = 0;
+                *num = 0;
                 log_d("create array error\r\n");
                 cJSON_Delete(root);
-                return NULL;                
+                my_free(root);
+                
+                for (i = 0; i < tmpArrayNum; i++)
+                {
+                    my_free(result[i]);
+                }    
+                my_free(result);
+        
+          return ;      
+        //return NULL;
             }
 
             *num = tmpArrayNum;
@@ -611,7 +732,10 @@ uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *nu
                  *num = 0;
                 log_d("card no is empty \r\n");
                 cJSON_Delete(root);
-                return NULL;    
+                my_free(root);
+                
+          return ;      
+        //return NULL;
             }
         
             tmpArrayNum = 1;
@@ -638,16 +762,31 @@ uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *nu
             *num = 0;
             log_d ( "can't parse json buff\r\n" );
             cJSON_Delete(root);
-            return NULL;
+            my_free(root);
+            
+          return ;      
+        //return NULL;
         }
         
-    }        
+    } 
+
+    descBuff = result;
+
+    memcpy(descBuff,result,sizeof(uint8_t)*tmpArrayNum*8);
     
     cJSON_Delete(root);
-    return result;
+    
+    for (i = 0; i < tmpArrayNum; i++)
+    {
+        my_free(result[i]);
+    }    
+    my_free(result);    
+    
+    my_free(root);
+
 }
 
-
+#endif 
 
 uint8_t packetCard(uint8_t *cardID,uint8_t *descJson)
 { 
@@ -663,6 +802,7 @@ uint8_t packetCard(uint8_t *cardID,uint8_t *descJson)
         log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
         cJSON_Delete(root);
         my_free(tmpBuf);            
+        tmpBuf=NULL;        
 		return CJSON_CREATE_ERR;
     }
 
@@ -693,6 +833,7 @@ uint8_t packetCard(uint8_t *cardID,uint8_t *descJson)
         log_d("cJSON_PrintUnformatted error \r\n");
         cJSON_Delete(root);
         my_free(tmpBuf);            
+        tmpBuf=NULL;        
         return CJSON_FORMAT_ERR;
     }    
 
@@ -700,6 +841,8 @@ uint8_t packetCard(uint8_t *cardID,uint8_t *descJson)
 
     cJSON_Delete(root);
     my_free(tmpBuf);
+    tmpBuf=NULL;        
+    
     return result;
 
 }

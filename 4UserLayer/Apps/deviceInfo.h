@@ -35,6 +35,9 @@
  #define DEVICE_DISABLE 0x00
  #define DEVICE_ENABLE  0x5555BBBB
 
+ #define CARD_UNORDERED 0x00
+ #define CARD_ORDERLY  0x55AA55AA
+
  #define WRITE_PRARM    0x01
  #define READ_PRARM     0x02
 
@@ -158,8 +161,6 @@ typedef struct
 }MQTT_TOPIC_STRU;
 
 
-
-
 typedef struct DEV_BASE_PARAM
 {
     //设备状态
@@ -172,7 +173,8 @@ typedef struct DEV_BASE_PARAM
     UPGRADE_URL_STRU upgradeInfo;   
 
     //MQTT参数
-    MQTT_TOPIC_STRU mqttTopic;    
+    MQTT_TOPIC_STRU mqttTopic;  
+    
 }DEV_BASE_PARAM_STRU;
 
 ///////////////////////FLASH相关///////////////////////////////////////////
@@ -181,7 +183,8 @@ typedef struct DEV_BASE_PARAM
 typedef struct RECORDINDEX
 {
     volatile uint32_t cardNoIndex;      //当前已存储了多少个卡号
-    volatile uint32_t delCardNoIndex;   //当前已存储了多少个已删除的卡号
+    volatile uint32_t delCardNoIndex;   //当前已存储了多少个已删除的卡号    
+    volatile uint32_t accessRecoIndex;   //当前已存储了多少通行记录
 }RECORDINDEX_STRU;
 
 

@@ -52,6 +52,8 @@ FLASH操作思路：
 #define USER_DEL                    CARD_DEL
 #define USER_VALID                  CARD_VALID
 #define TABLE_HEAD                  0xAA
+#define INCREMENT                   1
+#define DECLINE                     0
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -71,14 +73,18 @@ FLASH操作思路：
  *----------------------------------------------*/
 
 //add 2020.07.14
-//读取/查找卡号
+//读取/查找卡号,-1未找到，其它值为当前存储区域中的索引
 int readHead(uint8_t *headBuff,uint8_t mode); 
 
 //对缓冲区的卡号进行排序
 void sortHead(HEADINFO_STRU *head,int length);
 
+void qSortCard(HEADINFO_STRU *head,uint32_t length);
+
+void sortLastPageCard(void);
+
 //添加卡号
-uint8_t addHead(uint8_t *head,uint8_t mode);
+uint8_t addCard(uint8_t *head,uint8_t mode);
 
 //删除卡号
 int delHead(uint8_t *headBuff,uint8_t mode);
@@ -87,6 +93,15 @@ int delHead(uint8_t *headBuff,uint8_t mode);
 uint8_t addDelHead(int index);
 
 //uint8_t addHeadID(uint8_t *head,uint8_t mode);
+
+//写通行记录
+uint8_t writeRecord(uint8_t *buf,int len);
+
+//读通行记录
+uint8_t readRecord(uint8_t *buf);
+
+//清除通行记录
+void clearRecord(void);
 
 
 

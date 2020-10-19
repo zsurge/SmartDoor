@@ -41,8 +41,8 @@
 #define READER_TASK_PRIO	    ( tskIDLE_PRIORITY + 1)
 #define READER_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
 
-#define READER1         1           
-#define READER2         2
+
+
 
 
 typedef union
@@ -66,6 +66,7 @@ TaskHandle_t xHandleTaskReader = NULL;
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static void vTaskReader(void *pvParameters);
+
 static void reverseArray(uint8_t *array);
 
 void CreateReaderTask(void)
@@ -106,6 +107,7 @@ static void vTaskReader(void *pvParameters)
         /* 清零 */
         ptReaderBuf->devID = 0; 
         memset(ptReaderBuf->cardID,0x00,sizeof(ptReaderBuf->cardID));  
+
     
         cardDev1.id = bsp_WeiGenScanf(0);
         cardDev2.id = bsp_WeiGenScanf(1);
@@ -115,6 +117,7 @@ static void vTaskReader(void *pvParameters)
             reverseArray(cardDev1.sn);
             
             ptReaderBuf->devID = READER1; 
+            ptReaderBuf->mode = READMODE;
             memcpy(ptReaderBuf->cardID,cardDev1.sn,sizeof(cardDev1.sn));   
 
 
@@ -123,7 +126,7 @@ static void vTaskReader(void *pvParameters)
 						 (void *) &ptReaderBuf,             /* 发送结构体指针变量ptReader的地址 */
 						 (TickType_t)10) != pdPASS )
 			{
-                xQueueReset(xCardIDQueue);
+//                xQueueReset(xCardIDQueue); 删除该句，为了防止在下发数据的时候刷卡
                 DBG("send card1  queue is error!\r\n"); 
                 //发送卡号失败蜂鸣器提示
                 //或者是队列满                
@@ -140,6 +143,7 @@ static void vTaskReader(void *pvParameters)
             reverseArray(cardDev2.sn);
             
             ptReaderBuf->devID = READER2; 
+            ptReaderBuf->mode = READMODE;            
             memcpy(ptReaderBuf->cardID,cardDev2.sn,sizeof(cardDev2.sn));   
 
 			/* 使用消息队列实现指针变量的传递 */
@@ -147,40 +151,13 @@ static void vTaskReader(void *pvParameters)
 						 (void *) &ptReaderBuf,             /* 发送结构体指针变量ptReader的地址 */
 						 (TickType_t)10) != pdPASS )
 			{
-                xQueueReset(xCardIDQueue);
+//                xQueueReset(xCardIDQueue);删除该句，为了防止在下发数据的时候刷卡
                 DBG("send card2  queue is error!\r\n"); 
                 //发送卡号失败蜂鸣器提示
                 //或者是队列满                
             } 
 
-        }        
-
-        
-
-//        if(cardDev1.id != 0 || cardDev2.id != 0)
-//        {
-//            log_d("cardDev1 = %x,cardDev2=%x\r\n",cardDev1.id,cardDev2.id);
-//            
-//            log_d("cardDev1 %02x,%02x,%02x,%02x\r\n",cardDev1.sn[0],cardDev1.sn[1],cardDev1.sn[2],cardDev1.sn[3]);
-//            log_d("cardDev2 %02x,%02x,%02x,%02x\r\n",cardDev2.sn[0],cardDev2.sn[1],cardDev2.sn[2],cardDev2.sn[3]);
-
-//            reverseArray(cardDev1.sn);
-//            
-//            log_d("reverseArray %02x,%02x,%02x,%02x\r\n",cardDev1.sn[0],cardDev1.sn[1],cardDev1.sn[2],cardDev1.sn[3]);
-
-//            ret = readHead(cardDev1.sn, CARD_MODE);
-
-//            log_d("readHead = %d\r\n",ret);
-
-//            if(ret != NO_FIND_HEAD)
-//            {
-//                log_d("read card success\r\n");
-//            }
-//            else
-//            {
-//                log_d("read card error: not find card\r\n");
-//            }
-//        }        
+        }  
         
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_2);       
@@ -188,7 +165,8 @@ static void vTaskReader(void *pvParameters)
         vTaskDelay(100);        
     }
 
-}   
+} 
+
 
 
 
