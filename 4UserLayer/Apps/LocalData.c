@@ -740,7 +740,16 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     }
 
     //≈≈–Ú
-    qSortCard(gSectorBuff,num);    
+    qSortCard(gSectorBuff,num/sizeof(HEADINFO_STRU));   
+
+    for(int i=0;i<num/sizeof(HEADINFO_STRU);i++)
+    {
+        log_d("del card id =%x\r\n",gSectorBuff[i].headData.id);
+    }  
+    
+
+    log_d("qSortCard success\r\n");
+    
     //–¥ªÿ ˝æ›
     ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,num);
     if(ret == 0)
@@ -898,6 +907,12 @@ void sortLastPageCard(void)
 	addr = CARD_NO_HEAD_ADDR;    
     multiple = gRecordIndex.cardNoIndex / HEAD_NUM_SECTOR;
     remainder = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
+
+    if(remainder == 0)
+    {
+        log_d("SECTOR is zero\r\n");
+        return;
+    }
 
     memset(gSectorBuff,0x00,sizeof(gSectorBuff));
     
