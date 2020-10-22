@@ -123,6 +123,7 @@ static void vTaskDataProcess(void *pvParameters)
         if(ptMsg->mode == DOWNLOAD_CARD_MODE)
         {
             ret = addCard(ptMsg->cardID,CARD_MODE);
+            log_d("addCard = %d\r\n",ret);
             
             if(ret != 1)
             {
@@ -130,6 +131,17 @@ static void vTaskDataProcess(void *pvParameters)
                //2.ÅÅÐò
             }              
         }
+        else if(ptMsg->mode == DEL_CARD_MODE)
+        {
+            ret = delHead(ptMsg->cardID,CARD_MODE);
+            log_d("delHead = %d\r\n",ret);
+            
+            if(ret != 1)
+            {
+               //1.É¾³ýÓÃ»§Ê§°Ü
+
+            }              
+        }        
         else if(ptMsg->mode == READMODE) //¶Á¿¨
         {      
 //            memcpy(ptMsg->cardID,"\x00\xc2\x84\x94",4);

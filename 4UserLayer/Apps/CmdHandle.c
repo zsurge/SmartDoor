@@ -387,10 +387,14 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     //打包
     result = packetSingleAddCardJson(msgBuf,1,buf);
 
+    log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf));
+
     if(result != NO_ERR)
     {
         return result;
     }
+
+    len = strlen((char *)buf);
     
     //为了防止重复下载，先应答服务器，若应答OK，再写入到FLASH中
     ret = mqttSendData(buf,len); 
@@ -417,6 +421,7 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
     uint8_t tmp[CARD_NO_BCD_LEN] = {0};
     uint16_t len = 0;
     int wRet=1;
+    int ret = 0;
     uint8_t num=0;
     int i = 0;  
     uint8_t cardArray[20][8] = {0};    
@@ -438,40 +443,42 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
         memset(tmp,0x00,sizeof(tmp));
         asc2bcd(tmp, cardArray[i], CARD_NO_LEN, 1);        
         log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
+        tmp[0] = 0x00;
+
+        wRet = readHead(tmp,CARD_MODE);
         
-        wRet = delHead(tmp,CARD_MODE);
-        log_d("cardArray %d = %s,ret = %d\r\n",i,cardArray[i],wRet);  
-        
-        if(wRet == NO_FIND_HEAD)
+//        wRet = delHead(tmp,CARD_MODE);
+//        log_d("cardArray %d = %s,ret = %d\r\n",i,cardArray[i],wRet);  
+
+        //2.查询以卡号为ID的记录，并删除
+        if(wRet != NO_FIND_HEAD)
         {
-            //包括没有该条记录和其它错误
-            break;
+            //响应服务器
+            result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",0,buf);
         }
+        else
+        {
+            result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"0",0,buf);
+        }  
+
+        if(result != NO_ERR)
+        {
+            return result;
+        }
+
+        len = strlen((const char*)buf);
+
+        ret = mqttSendData(buf,len); 
+
+        if((ret > 20) && (wRet != NO_FIND_HEAD)) //这里是随便一个长度，为了避免跟错误代码冲突，错误代码表要改
+        {        
+            SendToQueue(tmp,CARD_NO_BCD_LEN,4);            
+        }     
+
     }
     
-    
-    //2.查询以卡号为ID的记录，并删除
-    if(wRet != NO_FIND_HEAD)
-    {
-        //响应服务器
-        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",0,buf);
-    }
-    else
-    {
-        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"0",0,buf);
-    }  
-
-    if(result != NO_ERR)
-    {
-        return result;
-    }
-
-    len = strlen((const char*)buf);
-
-    mqttSendData(buf,len); 
-
-
     return result;
+    
 }
 
 SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf )
@@ -577,17 +584,17 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
     SaveDevState(DEVICE_ENABLE);
 
 
-    //add 2020.04.27
-    xQueueReset(xCardIDQueue); 
-        
-    //这里需要发消息到消息队列，启用
-    SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
-
+    //add 2020.04.27    
+    xQueueReset(xCardIDQueue);  
+    
     len = strlen((const char*)buf);
 
     log_d("EnableDev len = %d,buf = %s\r\n",len,buf);
 
     mqttSendData(buf,len);
+
+    //这里需要发消息到消息队列，启用
+    SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);    
 
     return result;
 
@@ -616,15 +623,15 @@ SYSERRORCODE_E DisableDev ( uint8_t* msgBuf )
 
     SaveDevState(DEVICE_DISABLE);
     
-    //这里需要发消息到消息队列，禁用
-    SendToQueue(type,strlen((const char*)type),AUTH_MODE_UNBIND);
     
     len = strlen((const char*)buf);
 
     log_d("DisableDev len = %d,buf = %s,status = %x\r\n",len,buf,gDevBaseParam.deviceState.iFlag);
 
     mqttSendData(buf,len);
-
+    
+    //这里需要发消息到消息队列，禁用
+    SendToQueue(type,strlen((const char*)type),AUTH_MODE_UNBIND);
     return result;
 
 
@@ -673,7 +680,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
 static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-	int wRet = 1;
+	int ret = 0;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t cardNo[CARD_NO_LEN] = {0};
     uint8_t tmp[CARD_NO_LEN] = {0};
@@ -695,12 +702,15 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
     log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);    
 
     tmp[0] = 0x00;
+
+    //1.查找要删除的卡号
+    ret = readHead(tmp,CARD_MODE);
     
-    //删除CARDNO
-    wRet = delHead(tmp,CARD_MODE);
+//    //删除CARDNO
+//    wRet = delHead(tmp,CARD_MODE);
     
     //2.查询以卡号为ID的记录，并删除
-    if(wRet != NO_FIND_HEAD)
+    if(ret != NO_FIND_HEAD)
     {
         //响应服务器
         result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",0,buf);
@@ -718,7 +728,11 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    mqttSendData(buf,len);
+    ret = mqttSendData(buf,len); 
+    if(ret > 20) //这里是随便一个长度，为了避免跟错误代码冲突，错误代码表要改
+    {        
+        SendToQueue(tmp,CARD_NO_BCD_LEN,4);            
+    } 
     
 	return result;
 
@@ -912,22 +926,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
             {
                 accessFloor[len] = atoi(multipleFloor[len]);
             }
-        }   
-
-         //发送目标楼层
-         if(strlen((const char*)tagFloor) == 1) 
-         {
-             //这里需要发消息到消息队列，进行呼梯
-             SendToQueue(tagFloor,strlen((const char*)tagFloor),AUTH_MODE_REMOTE);
-         }
-
-         //发送多楼层权限
-         if(strlen((const char*)accessFloor) > 1)
-         {
-            //这里需要发消息到消息队列，进行呼梯
-            SendToQueue(accessFloor,strlen((const char*)accessFloor),AUTH_MODE_REMOTE);
-         }         
-
+        }  
 
         if(strlen((const char*)tagFloor) == 0 && strlen((const char*)accessFloor)==0)
         {
@@ -947,7 +946,21 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
 
         log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
 
-        mqttSendData(buf,len); 
+        mqttSendData(buf,len);         
+
+         //发送目标楼层
+         if(strlen((const char*)tagFloor) == 1) 
+         {
+             //这里需要发消息到消息队列，进行呼梯
+             SendToQueue(tagFloor,strlen((const char*)tagFloor),AUTH_MODE_REMOTE);
+         }
+
+         //发送多楼层权限
+         if(strlen((const char*)accessFloor) > 1)
+         {
+            //这里需要发消息到消息队列，进行呼梯
+            SendToQueue(accessFloor,strlen((const char*)accessFloor),AUTH_MODE_REMOTE);
+         }  
     }    
     
     return result;
