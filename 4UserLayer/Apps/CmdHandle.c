@@ -63,7 +63,6 @@ int gConnectStatus = 0;
 int	gMySock = 0;
 uint8_t gUpdateDevSn = 0; 
 
-uint32_t gCurTick = 0;
 
 
 READER_BUFF_STRU gReaderMsg;
@@ -239,7 +238,6 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
        rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
        if(rc == len) 
         {
-           gCurTick =  xTaskGetTickCount();
            log_d("send PUBLISH Successfully,rc = %d,len = %d\r\n",rc,len);
        }
        else

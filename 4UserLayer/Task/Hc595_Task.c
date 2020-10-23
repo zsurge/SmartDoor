@@ -61,7 +61,7 @@ static void vTaskDisplay(void *pvParameters)
 {
     while(1)
     {
-        bsp_HC595Show('A',0,5);
+        bsp_HC595Show('A',0,6);
         vTaskDelay(1000);
         bsp_HC595Show(0,0,1);
 
