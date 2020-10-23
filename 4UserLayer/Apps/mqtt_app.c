@@ -26,7 +26,7 @@
 #include "jsonUtils.h"
 #include "bsp_ds1302.h"
 
-#define send_duration	300	//心跳发送周期（ms）
+#define send_duration	180	//心跳发送周期（ms）
 
 
 
