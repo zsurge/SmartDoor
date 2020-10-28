@@ -105,25 +105,22 @@ static void AppTaskCreate (void)
     CreateHandShakeTask();
 
     //LED灯
-    CreateLedTask();
+    CreateLedTask();    //0
 
     //跟控制板通讯
-    CreateCommTask();
-
-    //数码管显示
-    CreateHc595Task();    
+    CreateCommTask();   //1
     
     //按键
 //    CreateKeyTask();
 
     //读卡器
-    CreateReaderTask();
+    CreateReaderTask();  //2
 
     //卡数据处理
-    CreateDataProcessTask();
+    CreateDataProcessTask(); //4
 
     //MQTT通讯
-    CreateMqttTask();
+    CreateMqttTask();   //5
 
     //看门狗
     CreateWatchDogTask();

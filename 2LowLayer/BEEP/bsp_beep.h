@@ -14,7 +14,7 @@
 
 #define RCC_ALL_BEEP     (RCC_AHB1Periph_GPIOG)
 
-#define GPIO_PORT_BEEP    GPIOG
+#define GPIO_PORT_BEEP   GPIOG
 #define GPIO_PIN_BEEP    GPIO_Pin_15
 
 

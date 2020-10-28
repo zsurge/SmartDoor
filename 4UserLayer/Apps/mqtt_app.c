@@ -76,8 +76,7 @@ void mqtt_thread ( void )
 	unsigned char dup;
 	int qos;
 	unsigned char retained = 0;
-	uint8_t reConnectTimes = 0; 
-
+	char pingEQTimes = 0; 
 	
 	
     //获取当前滴答，作为心跳包起始时间
@@ -214,7 +213,7 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
 				{
 					log_d ( "step = %d,MQTT is concet OK!\r\n",CONNACK );	
 					gConnectStatus = 1;
-					reConnectTimes = 0;
+//					reConnectTimes = 0;
 				}
 				msgtypes = SUBSCRIBE;													//连接成功 执行 订阅 操作
 				break;
@@ -338,6 +337,30 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
 				log_d ( "step = %d,PUBCOMP!\r\n",PUBCOMP );        			//just for qos2
 				msgtypes = 0;
 				break;
+
+			case PINGREQ:   
+//				log_d ( "step = %d,mqtt server ping ,pingEQTimes = %d\r\n",PINGREQ,pingEQTimes);  			//心跳			
+			    len = MQTTSerialize_pingreq((unsigned char*)buf, buflen);							//心跳
+				rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
+				if(rc == len)
+				{
+            		if(pingEQTimes++ >= 5)
+                	{
+                	    pingEQTimes = 0;
+                	    msgtypes = 0; 
+                        gConnectStatus = 0;
+                        goto MQTT_reconnect;     
+                	}				    
+					log_d("send PINGREQ Successfully,,pingEQTimes = %d\r\n",pingEQTimes);
+			    }
+				else
+				{
+                    log_d("time to ping mqtt server to take alive!\r\n");
+                    NVIC_SystemReset();
+                }	
+                msgtypes = 0;
+				break;
+#if 0		//会频繁触发MQTT上下线机制	
 			//心跳请求
 			case PINGREQ://12
 				len = MQTTSerialize_pingreq ( ( unsigned char* ) buf, buflen );		
@@ -367,9 +390,11 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
                     goto MQTT_reconnect;                    
 				}				            
 				break;
+#endif				
 			//心跳响应
 			case PINGRESP://13
-				log_d ( "step = %d,111 mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
+			    pingEQTimes--;
+				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
 				msgtypes = 0;
 				break;
             case UNSUBSCRIBE:
@@ -407,10 +432,6 @@ MQTT_reconnect:
 	transport_close ( gMySock );    
 	log_d ( "mqtt thread exit.try again 3 sec\r\n" );  
 
-	if(reConnectTimes++ >= 10)
-	{
-	    NVIC_SystemReset();
-	}
     vTaskDelay (200);
     goto MQTT_START;        
 }

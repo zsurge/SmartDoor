@@ -23,6 +23,7 @@
 #include "led_task.h"
 //#include "bsp_tim_pwm.h"
 #include "bsp_led.h"
+#include "bsp_digitaltube.h"
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -65,9 +66,14 @@ static void vTaskLed(void *pvParameters)
     while(1)
     {  
         LEDERROR = !LEDERROR;
+        
+        bsp_HC595Show('A',0,8);
+        vTaskDelay(500);
+        bsp_HC595Show(0,0,1);    
+        
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
-        vTaskDelay(300); 
+        vTaskDelay(500); 
     }
 } 
 

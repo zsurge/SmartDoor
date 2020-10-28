@@ -29,6 +29,7 @@
 #include "tool.h"
 #include "LocalData.h"
 #include "bsp_Wiegand.h"
+#include "bsp_beep.h"
 
 
 
@@ -106,6 +107,7 @@ static void vTaskReader(void *pvParameters)
     {        
         /* ÇåÁã */
         ptReaderBuf->devID = 0; 
+        ptReaderBuf->mode = 0;
         memset(ptReaderBuf->cardID,0x00,sizeof(ptReaderBuf->cardID));  
 
     
@@ -114,6 +116,7 @@ static void vTaskReader(void *pvParameters)
 
         if(cardDev1.id != 0)
         {
+            Sound2(50);
             reverseArray(cardDev1.sn);
             
             ptReaderBuf->devID = READER1; 
@@ -136,10 +139,12 @@ static void vTaskReader(void *pvParameters)
         
         /* ÇåÁã */
         ptReaderBuf->devID = 0; 
+        ptReaderBuf->mode = 0;
         memset(ptReaderBuf->cardID,0x00,sizeof(ptReaderBuf->cardID));  
 
         if(cardDev2.id != 0)
         {
+            Sound2(50);
             reverseArray(cardDev2.sn);
             
             ptReaderBuf->devID = READER2; 
