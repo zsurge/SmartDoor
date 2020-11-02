@@ -58,21 +58,6 @@
 #include "cJSON.h"
 #include "malloc.h"
 
-//void *my_malloc(u32 size)
-//{
-//	return (void*)mymalloc(SRAMIN, size);
-//}
-
-//void my_free(void *ptr)
-//{
-//	myfree(SRAMIN, ptr);
-//}
-
-//void *my_realloc(void *ptr,u32 size)
-//{
-//	return (void*)myrealloc(SRAMIN, ptr, size);
-//}
-
 /* define our own boolean type */
 #ifdef true
 #undef true

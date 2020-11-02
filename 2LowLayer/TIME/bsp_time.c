@@ -34,7 +34,7 @@ volatile uint32_t g500usTimerRS485 = 0;
 volatile uint32_t gPlayTimer = 0;
 volatile uint32_t gFollowTimer = 0;
 volatile uint32_t gRetrogradeTimer = 0;
-CARDSORT_STRU gCardSortTimer = {0};
+TIM_TYPE gCardSortTimer = {0};
 
 
 //volatile uint32_t gRandomNum = 0;
@@ -46,7 +46,7 @@ void bsp_TimeSysTickHandler (void)
     if (gPlayTimer) gPlayTimer--; 
     if (gFollowTimer) gFollowTimer--;    
     if (gRetrogradeTimer) gRetrogradeTimer--;
-    if (gCardSortTimer.cardSortTimer) gCardSortTimer.cardSortTimer--;    
+    if (gCardSortTimer.outTimer) gCardSortTimer.outTimer--;    
 }
 
 void bsp_TIM6_Init(void)

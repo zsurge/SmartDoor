@@ -153,7 +153,6 @@ void RS485_SendStr(COM_PORT_E _ucPort,char *_pBuf);
 void RS485_SetBaud(COM_PORT_E _ucPort,uint32_t _baud);
 
 uint16_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len);
-uint16_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len,uint32_t timeout);
 
 //void RS485_U6_RX_EN(void);
 //void RS485_U6_TX_EN(void);

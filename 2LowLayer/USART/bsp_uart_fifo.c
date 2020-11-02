@@ -735,43 +735,6 @@ uint16_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len)
 }
 
 
-uint16_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len,uint32_t timeout)
-{
-    //uint8_t i = 0;   
-    uint16_t recvSize = len;
-    uint16_t recvLen = 0;
-    //uint8_t tmp[1] = {0};
-    UART_T *pUart;
-	pUart = ComToUart(_ucPort);
-    
-	if (pUart == 0)
-	{
-		return 0;
-	}
-    
-    if(recvSize > pUart->usRxCount)  //指定读取长度大于实际接收到的数据长度时
-    {
-        recvSize=pUart->usRxCount; //读取长度设置为实际接收到的数据长度
-    }  
-
-
-	g500usTimerRS485 = timeout;
-
-	while (1)
-	{
-		if (g500usTimerRS485 == 0) return recvLen;
-
-
-        UartGetChar(pUart,buf + recvLen);
-        recvLen++;
-
-		if (recvLen >= recvSize) return recvSize;
-	}  
-
-}
-
-
-
 /*
 *********************************************************************************************************
 *	函 数 名: UartVarInit

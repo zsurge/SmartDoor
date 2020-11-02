@@ -701,7 +701,9 @@ void clearTemplateFRAM(void)
 
 static void eraseUserDataIndex ( void )
 {
-    ClearRecordIndex();
+    gRecordIndex.cardNoIndex = 0;
+    gRecordIndex.delCardNoIndex = 0;
+    gRecordIndex.accessRecoIndex = 0;
     optRecordIndex(&gRecordIndex,WRITE_PRARM);
 }
 
@@ -711,7 +713,7 @@ void eraseUserDataAll ( void )
 	int32_t iTime1, iTime2;
 	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
 	eraseHeadSector();
-//	eraseDataSector();
+	eraseDataSector();
     eraseUserDataIndex();
 	clearTemplateFRAM();
     initTemplateParam();	
