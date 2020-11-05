@@ -241,7 +241,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
            log_d("send PUBLISH Successfully,rc = %d,len = %d\r\n",rc,len);
        }
        else
-       {
+       {           
            log_d("send PUBLISH failed,rc = %d,len = %d\r\n",rc,len);     
        }
       
@@ -252,7 +252,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
    }
   
 
-   return len;
+   return rc;
 }
 
 

@@ -355,8 +355,8 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
 			    }
 				else
 				{
-                    log_d("time to ping mqtt server to take alive!\r\n");
-                    NVIC_SystemReset();
+                    log_d("time to ping mqtt server to take alive!,%d,%d\r\n",rc,len);
+                    NVIC_SystemReset(); 
                 }	
                 msgtypes = 0;
 				break;
