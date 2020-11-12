@@ -55,6 +55,8 @@
 static uint8_t checkFlashSpace ( uint8_t mode );
 
 static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target);
+static int Bin_Search_addr(uint32_t startAddr,int numsSize,int target);
+
 static void swap(uint32_t *x, uint32_t *y);
 static int selectPivotMedianOfThree(uint32_t *arr,uint32_t low,uint32_t high);
 static void insertSort(uint32_t *arr, uint32_t m, uint32_t n);
@@ -94,24 +96,25 @@ int readHead(uint8_t *headBuff,uint8_t mode)
 	int32_t iTime1, iTime2;
 	 
 	int ret = 0;
-    HEADINFO_STRU head;
+    HEADINFO_STRU targetData,firstData,lastData;
+
 
 	if ( headBuff == NULL )
 	{
 		return NO_FIND_HEAD;
 	}	
 
-	if(headBuff[0] == 0x01)
-	{
-	    log_d("card status:del\r\n");
-	    return NO_FIND_HEAD; //已删除卡
-	}
+//	if(headBuff[0] == 0x01)
+//	{
+//	    log_d("card status:del\r\n");
+//	    return NO_FIND_HEAD; //已删除卡
+//	}
 
-    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
+    
 
-	memcpy(head.headData.sn,headBuff,sizeof(head.headData.sn));
+	memcpy(targetData.headData.sn,headBuff,sizeof(targetData.headData.sn));
 
-    log_d("want find head.headData.id = %x,sn = %02x,%02x,%02x,%02x\r\n",head.headData.id,head.headData.sn[0],head.headData.sn[1],head.headData.sn[2],head.headData.sn[3]);
+    log_d("want find head.headData.id = %x,sn = %02x,%02x,%02x,%02x\r\n",targetData.headData.id,targetData.headData.sn[0],targetData.headData.sn[1],targetData.headData.sn[2],targetData.headData.sn[3]);
 	
 
     ClearRecordIndex();
@@ -138,42 +141,43 @@ int readHead(uint8_t *headBuff,uint8_t mode)
     log_d("addr = %x,multiple = %d,remainder=%d\r\n",address,multiple,remainder);
     
 
-    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
-    
-    //2.读取最后一页第一个卡号和最后一个卡号；
-    ret = FRAM_Read (FM24V10_1, address, gSectorBuff, (remainder)* CARD_USER_LEN);
+//2.读取最后一页第一个卡号和最后一个卡号；
 
+    firstData.headData.id = 0;
+    lastData.headData.id = 0;   
+
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
     
-    log_d("FRAM_Read SUCCESS addr = %x,remainder = %d\r\n",address,remainder);
-    
-//    for(i=0;i<remainder;i++)
-//    {
-//        log_d("add = %x,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",address,gSectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
-//    }    
-    
-    log_d("head = %x,last page %x,%x\r\n",head.headData.id,gSectorBuff[0].headData.id,gSectorBuff[remainder-1].headData.id);
-    
+    ret = FRAM_Read (FM24V10_1, address, &firstData,CARD_USER_LEN);
     if(ret == 0)
     {
         log_e("read fram error\r\n");
-        return NO_FIND_HEAD;       
-
-    }   
+        return NO_FIND_HEAD; 
+    }
     
-    log_d("head = %x,last page %x,%x\r\n",head.headData.id,gSectorBuff[0].headData.id,gSectorBuff[remainder-1].headData.id);
-
-    
-    if((head.headData.id >= gSectorBuff[0].headData.id) && (head.headData.id <= gSectorBuff[remainder-1].headData.id))
+    ret = FRAM_Read (FM24V10_1, address+(remainder-1)* CARD_USER_LEN, &lastData,CARD_USER_LEN); 
+    if(ret == 0)
     {
+        log_e("read fram error\r\n");
+        return NO_FIND_HEAD;
+    }  
+    log_d("head = %x,last page %x,%x\r\n",targetData.headData.id,firstData.headData.id,lastData.headData.id);
+
     
-        ret = Bin_Search(gSectorBuff,remainder,head.headData.id);
+    if((targetData.headData.id >= firstData.headData.id) && (targetData.headData.id <= lastData.headData.id))
+    {      
+    
+//        ret = Bin_Search(gSectorBuff,remainder,targetData.headData.id);
+        ret = Bin_Search_addr(address,remainder,targetData.headData.id);       
 
         log_d("1.Bin_Search flash index = %d\r\n",ret);
         
         if(ret != NO_FIND_HEAD)
         {
-            log_d("find it\r\n");
-            return ret;
+            iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
+            log_d ( "find it，use %d ms\r\n",iTime2 - iTime1);      
+
+            return multiple*HEAD_NUM_SECTOR+ret;
         }
     }    
     
@@ -182,18 +186,30 @@ int readHead(uint8_t *headBuff,uint8_t mode)
         address = CARD_NO_HEAD_ADDR;//从零开始读;
         address += i * HEAD_NUM_SECTOR  * CARD_USER_LEN;
         
-        //2.读取第一个卡号和最后一个卡号；
-        ret = FRAM_Read (FM24V10_1, address, gSectorBuff, HEAD_NUM_SECTOR * CARD_USER_LEN);
+        firstData.headData.id = 0;
+        lastData.headData.id = 0;   
         
+        ret = FRAM_Read (FM24V10_1, address, &firstData,CARD_USER_LEN);
         if(ret == 0)
         {
             log_e("read fram error\r\n");
             return NO_FIND_HEAD; 
-        }  
+        }
         
-        if(head.headData.id >= gSectorBuff[0].headData.id && head.headData.id <= gSectorBuff[HEAD_NUM_SECTOR-1].headData.id)
+        ret = FRAM_Read (FM24V10_1, address+(HEAD_NUM_SECTOR-1)* CARD_USER_LEN, &lastData,CARD_USER_LEN); 
+        if(ret == 0)
         {
-            ret = Bin_Search(gSectorBuff,HEAD_NUM_SECTOR,head.headData.id);
+            log_e("read fram error\r\n");
+            return NO_FIND_HEAD;
+        }  
+        log_d("head = %x,last page %x,%x\r\n",targetData.headData.id,firstData.headData.id,lastData.headData.id);
+
+        
+        if((targetData.headData.id >= firstData.headData.id) && (targetData.headData.id <= lastData.headData.id))
+        {
+//            ret = Bin_Search(gSectorBuff,HEAD_NUM_SECTOR,targetData.headData.id);
+            
+            ret = Bin_Search_addr(address,HEAD_NUM_SECTOR,targetData.headData.id);       
             if(ret != NO_FIND_HEAD)
             {
             	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
@@ -290,7 +306,39 @@ static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target)
     return NO_FIND_HEAD;
 }
 
+static int Bin_Search_addr(uint32_t startAddr,int numsSize,int target)
+{
+	int low = 0,high = numsSize-1,mid;
+	HEADINFO_STRU tmpData;
+	uint8_t ret = 0;
+	    
+	while(low <= high)
+	{
+		mid = low + ((high - low) >> 1); //获取中间值
 
+        ret = FRAM_Read (FM24V10_1, startAddr+(mid)*CARD_USER_LEN, &tmpData, (1)* CARD_USER_LEN);
+      
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return NO_FIND_HEAD; 
+        }  
+        
+		if(tmpData.headData.id == target)
+		{
+		    return mid;
+		}
+		else if(tmpData.headData.id < target)
+		{
+		    low = mid+1;//mid已经交换过了,low往后移一位
+		}
+		else
+		{
+		    high = mid-1; //mid已经交换过了,right往前移一位
+		}
+	}        
+    return NO_FIND_HEAD;
+}
 
 
 uint32_t addCard(uint8_t *head,uint8_t mode)
@@ -301,7 +349,7 @@ uint32_t addCard(uint8_t *head,uint8_t mode)
 	uint8_t ret = 0;
 	uint32_t curIndex = 0;
 
-    HEADINFO_STRU tmpCard;
+    HEADINFO_STRU tmpCard,rxCard;
 
     int32_t iTime1, iTime2;
 
@@ -392,9 +440,20 @@ uint32_t addCard(uint8_t *head,uint8_t mode)
 //                log_e("write fram error\r\n");
 //                return ret;
 //            } 
-//        }
-       
+//        }  
     }
+
+    ret = FRAM_Read (FM24V10_1, addr, &rxCard, 1*sizeof(HEADINFO_STRU));
+    if(ret == 0)
+    {
+        log_e("read fram error\r\n");
+        return ret;
+    }
+
+    if(tmpCard.headData.id != rxCard.headData.id)
+    {
+        return 0;//写不成功
+    }   
 
 
 	if ( mode == CARD_MODE )
