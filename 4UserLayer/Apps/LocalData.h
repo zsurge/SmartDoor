@@ -107,6 +107,8 @@ uint8_t readRecord(uint8_t *buf);
 //清除通行记录
 void clearRecord(void);
 
+//针对所有数据排序
+void manualSortCard(void);
 
 
 #endif /* __LOCALDATA_H__ */

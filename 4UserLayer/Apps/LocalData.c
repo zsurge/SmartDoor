@@ -29,6 +29,7 @@
 #include "malloc.h"
 #include "bsp_MB85RC128.h"
 #include "deviceInfo.h"
+#include "quickSort.h"
 
 
 
@@ -506,10 +507,8 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     addr += (multiple * HEAD_NUM_SECTOR + remainder)  * sizeof(HEADINFO_STRU);
 
     //3.将要删除的卡号置全0    
-    tmpCard.headData.id = 0;
-    
-    ret = FRAM_Write ( FM24V10_1, addr, &tmpCard,1* sizeof(HEADINFO_STRU));
-    
+    tmpCard.headData.id = 0;    
+    ret = FRAM_Write ( FM24V10_1, addr, &tmpCard,1* sizeof(HEADINFO_STRU));    
     if(ret == 0)
     {
         log_e("write fram error\r\n");
@@ -517,19 +516,32 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     }   
 
     //4.对这一页重新排序
-    if(remainder == 0 && multiple >= 1)
-    {     
-        addr = (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
-        num = HEAD_NUM_SECTOR * sizeof(HEADINFO_STRU);
+    if(multiple >= 1)
+    {
+        addr += (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+        num = HEAD_NUM_SECTOR;
     }
     else
-    { 
-        addr = multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
-        num = remainder * sizeof(HEADINFO_STRU);    
+    {
+        addr = CARD_NO_HEAD_ADDR;
+        ClearRecordIndex();
+        optRecordIndex(&gRecordIndex,READ_PRARM);        
+        num = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
     }
     
+//    if(remainder == 0 && multiple >= 1)
+//    {     
+//        addr = (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+//        num = HEAD_NUM_SECTOR * sizeof(HEADINFO_STRU);
+//    }
+//    else
+//    { 
+//        addr = multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+//        num = remainder * sizeof(HEADINFO_STRU);    
+//    }
+    
     //读一页数据
-    ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, num);
+    ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, num* sizeof(HEADINFO_STRU));
     if(ret == 0)
     {
         log_e("read fram error\r\n");
@@ -537,10 +549,19 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     }
 
     //排序
-    qSortCard(gSectorBuff,num/sizeof(HEADINFO_STRU));   
+    qSortCard(gSectorBuff,num);  
+
+    //写回数据
+    ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,num* sizeof(HEADINFO_STRU));
+    if(ret == 0)
+    {
+        log_e("write fram error\r\n");
+        return ret;
+    }  
+    
 
     #if DEBUG_PRINT
-    for(int i=0;i<ret/sizeof(HEADINFO_STRU);i++)
+    for(int i=0;i<num;i++)
     {
         log_d("del card id =%x\r\n",gSectorBuff[i].headData.id);
     }  
@@ -549,13 +570,7 @@ int delHead(uint8_t *headBuff,uint8_t mode)
 
     log_d("qSortCard success\r\n");
     
-    //写回数据
-    ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,num);
-    if(ret == 0)
-    {
-        log_e("write fram error\r\n");
-        return ret;
-    }  
+
     
     return 1;
   
@@ -685,7 +700,8 @@ void qSort(void *dataBuff,uint32_t low,uint32_t high)
 
 void qSortCard(HEADINFO_STRU *head,uint32_t length)
 {
-    qSort(head,0,length-1);
+//    qSort(head,0,length-1);
+    quickSortNor(head,0, length-1);
 }
 
 void sortLastPageCard(void)
@@ -818,6 +834,82 @@ void sortPageCard(void)
 	
     log_d("qSortpageCard success\r\n");
 }
+
+
+void manualSortCard(void)
+{
+    uint8_t multiple = 0;
+	uint16_t remainder = 0;
+	int ret = 0;
+
+	int i = 0;
+	uint32_t addr = CARD_NO_HEAD_ADDR;
+
+    int32_t iTime1, iTime2;   
+       
+   //1.先判定当前有多少个卡号;
+    ClearRecordIndex();
+    optRecordIndex(&gRecordIndex,READ_PRARM);
+    
+	addr = CARD_NO_HEAD_ADDR;    
+    multiple = gRecordIndex.cardNoIndex / HEAD_NUM_SECTOR;
+    remainder = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
+
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
+    if(remainder != 0)
+    {
+        //2.计算最后一页地址
+        addr += multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);    
+        
+        //3.读取最后一页
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, remainder* sizeof(HEADINFO_STRU));
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return ;
+        } 
+        
+        //5.排序        
+        qSortCard(gSectorBuff,remainder);   
+        
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,remainder* sizeof(HEADINFO_STRU));        
+        if(ret == 0)
+        {
+            log_e("write fram error\r\n");
+            return ;
+        }          
+    }    
+
+    
+    for(i=0;i<multiple;i++)
+    {
+        addr = CARD_NO_HEAD_ADDR;//从零开始读;
+        addr += i * HEAD_NUM_SECTOR  * CARD_USER_LEN; 
+        memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+        
+        //3.读当前页      
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return ;
+        }         
+        //排序
+        qSortCard(gSectorBuff,HEAD_NUM_SECTOR); 
+        //写回数据
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));        
+        if(ret == 0)
+        {
+            log_e("write fram error\r\n");
+            return ;
+        }        
+     }
+
+	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_e( "sort all card success，use time: %dms\r\n",iTime2 - iTime1 );  	
+}
+
 
 static void optAccessIndex(uint8_t mode)
 {
