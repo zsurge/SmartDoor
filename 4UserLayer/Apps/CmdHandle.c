@@ -333,7 +333,7 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
         //或者是队列满                
     }     
 
-#if 1//DEBUG_PRINT
+#if DEBUG_PRINT
     TestFlash(CARD_MODE);
 #endif    
 	return result;
