@@ -90,7 +90,8 @@ static void vTaskDataProcess(void *pvParameters)
         {
             log_d("-----start sort-----\r\n");
             gCardSortTimer.flag = 0;
-            sortLastPageCard();
+            //sortLastPageCard();
+            manualSortCard();
         } 
 
         //读取缓冲区，若有数据，则先上送历史记录 

@@ -390,9 +390,9 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     
     if(ret >= 1)
     {
-        gCardSortTimer.outTimer = 60000;
-        gCardSortTimer.flag = 1; 
-        
+//        gCardSortTimer.outTimer = 60000;
+//        gCardSortTimer.flag = 1; 
+        sortLastPageCard();
         //为了防止漏下，先写入到FLASH中,OK后应答服务器 
         result = packetSingleAddCardJson(msgBuf,1,buf);        
 //        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf)); 
@@ -831,7 +831,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    gCardSortTimer.outTimer = 60000;
+    gCardSortTimer.outTimer = 30000;
     gCardSortTimer.flag = 1;
     
     //2.保存卡号
@@ -854,7 +854,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
         log_d("addCard = %d\r\n",ret);
         
         if(ret >= 1)
-        {
+        {   
             result = modifyJsonItem(packetBaseJson(msgBuf,1),"cardNo",tmpAsc,0,buf); 
         }
         else
