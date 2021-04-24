@@ -108,8 +108,11 @@ static void vTaskDataProcess(void *pvParameters)
         xReturn = xQueueReceive( xCardIDQueue,    /* 消息队列的句柄 */
                                  (void *)&ptMsg,  /*这里获取的是结构体的地址 */
                                  xMaxBlockTime); /* 设置阻塞时间 */
-        if(pdTRUE == xReturn)
-        {   
+        if(pdTRUE != xReturn)
+        {
+            continue;
+        }
+        
             //消息接收成功，发送接收到的消息                
             log_d("cardid %02x,%02x,%02x,%02x,devid = %d,mode = %d\r\n",ptMsg->cardID[0],ptMsg->cardID[1],ptMsg->cardID[2],ptMsg->cardID[3],ptMsg->devID,ptMsg->mode);
         
@@ -217,7 +220,7 @@ static void vTaskDataProcess(void *pvParameters)
                     //或者是队列满                
                 }            
             }            
-       }
+     
        
         /* 发送事件标志，表示任务正常运行 */        
         xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4); 

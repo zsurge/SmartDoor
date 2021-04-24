@@ -392,7 +392,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     {
 //        gCardSortTimer.outTimer = 60000;
 //        gCardSortTimer.flag = 1; 
-//        sortLastPageCard();
+        sortLastPageCard();
         //为了防止漏下，先写入到FLASH中,OK后应答服务器 
         result = packetSingleAddCardJson(msgBuf,1,buf);        
 //        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf)); 
@@ -415,8 +415,10 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     {
         result = FLASH_W_ERR;     
     }      
-    //这里添加一个指令，用来对所有数据进行排序    
-    SendToQueue(cardNo,CARD_NO_BCD_LEN,10); //这里进行整页排序    
+
+    
+    //这里添加一个指令，用来对所有数据进行排序    1.1.6删除，有丢卡号风险
+    //SendToQueue(cardNo,CARD_NO_BCD_LEN,10); //这里进行整页排序    
     
 	return result;
 }
@@ -679,6 +681,8 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
     
     //这里添加一个指令，用来对所有数据进行排序    
     SendToQueue(tmpBcd,CARD_NO_BCD_LEN,10); //这里进行整页排序
+
+
     
 	return result;
 

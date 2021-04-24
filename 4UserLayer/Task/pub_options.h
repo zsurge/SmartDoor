@@ -58,7 +58,7 @@
 
     
     
-#define TASK_BIT_ALL ( TASK_BIT_0 | TASK_BIT_1 | TASK_BIT_2 |TASK_BIT_4)
+#define TASK_BIT_ALL ( TASK_BIT_0 | TASK_BIT_1 | TASK_BIT_2 )
     
 //#define TASK_BIT_ALL ( TASK_BIT_1  |TASK_BIT_3|TASK_BIT_4|TASK_BIT_5)
 
