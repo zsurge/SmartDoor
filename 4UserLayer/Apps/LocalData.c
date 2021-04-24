@@ -907,7 +907,7 @@ void manualSortCard(void)
      }
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_e( "sort all card success，use time: %dms\r\n",iTime2 - iTime1 );  	
+	log_i( "sort all card success，use time: %dms\r\n",iTime2 - iTime1 );  	
 }
 
 
