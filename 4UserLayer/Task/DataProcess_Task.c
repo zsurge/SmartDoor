@@ -91,7 +91,7 @@ static void vTaskDataProcess(void *pvParameters)
             log_d("-----start sort-----\r\n");
             gCardSortTimer.flag = 0;
             //sortLastPageCard();
-            manualSortCard();
+            //manualSortCard(); //1.17 删除全局排序
         } 
 
         //读取缓冲区，若有数据，则先上送历史记录 

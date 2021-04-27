@@ -680,7 +680,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
     mqttSendData(buf,len);
     
     //这里添加一个指令，用来对所有数据进行排序    
-    SendToQueue(tmpBcd,CARD_NO_BCD_LEN,10); //这里进行整页排序
+//    SendToQueue(tmpBcd,CARD_NO_BCD_LEN,10); //这里进行整页排序
 
 
     
@@ -881,8 +881,11 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
             result = FLASH_W_ERR;     
         }
 
+        log_i("download index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+
         if((ret/1024 >= 1) && (ret%1024 == 0))
-        {
+        {        
+            log_i("sortPageCard index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
             SendToQueue(tmpBcd,CARD_NO_BCD_LEN,2); //这里进行整页排序
         }   
 

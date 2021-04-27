@@ -764,7 +764,7 @@ void sortLastPageCard(void)
 
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "sort last page card success，use time: %dms\r\n",iTime2 - iTime1 );  
+	log_i( "sort last page card success，use time: %dms\r\n",iTime2 - iTime1 );  
 }
 
 
@@ -795,6 +795,8 @@ void sortPageCard(void)
     
     //2.计算当前页地址
     addr += (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+
+    log_i("sortPageCard addr = %x,page = %d,total = %d\r\n",addr,multiple,gRecordIndex.cardNoIndex);
 
     //3.读当前页
 //    SPI_FLASH_BufferRead(gSectorBuff, addr ,HEAD_NUM_SECTOR * sizeof(HEADINFO_STRU));       
@@ -829,10 +831,8 @@ void sortPageCard(void)
 
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "sort FULL page card success，use time: %dms\r\n",iTime2 - iTime1 );  
-
+	log_i ( "sort FULL page card success，use time: %dms\r\n",iTime2 - iTime1 );  
 	
-    log_d("qSortpageCard success\r\n");
 }
 
 
