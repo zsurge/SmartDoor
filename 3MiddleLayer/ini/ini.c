@@ -786,7 +786,7 @@ void TestFlash ( uint8_t mode )
 		
 		FRAM_Read ( FM24V10_1, addr+i*sizeof ( HEADINFO_STRU ), &tmp, sizeof ( HEADINFO_STRU ) );
 		bcd2asc ( ( uint8_t* ) buff, tmp.headData.sn, CARD_NO_LEN_ASC, 0 );
-		log_i("the %d card id = %s\r\n",i,buff);
+		log_i("%d , %s\r\n",i,buff);
 	}
 
 //	for ( i=0; i<num; i++ )

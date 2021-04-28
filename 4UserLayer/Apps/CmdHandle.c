@@ -314,7 +314,7 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
 
     mqttSendData(buf,len);
 
-    log_d("gSectorBuff = %d\r\n",sizeof(gSectorBuff));
+
 
     log_d("======OpenDoor after = %3d%======\r\n",mem_perused(SRAMIN));
     
@@ -390,9 +390,10 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     
     if(ret >= 1)
     {
-//        gCardSortTimer.outTimer = 60000;
+//        gCardSortTimer.outTimer = 30000;
 //        gCardSortTimer.flag = 1; 
-        sortLastPageCard();
+//        sortLastPageCard();
+
         //为了防止漏下，先写入到FLASH中,OK后应答服务器 
         result = packetSingleAddCardJson(msgBuf,1,buf);        
 //        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf)); 
@@ -416,9 +417,11 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
         result = FLASH_W_ERR;     
     }      
 
-    
-    //这里添加一个指令，用来对所有数据进行排序    1.1.6删除，有丢卡号风险
-    //SendToQueue(cardNo,CARD_NO_BCD_LEN,10); //这里进行整页排序    
+    if((ret/1024 >= 1) && (ret%1024 == 0))
+    {        
+        log_i("sortPageCard index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+        SendToQueue(cardNo,CARD_NO_BCD_LEN,2); //这里进行整页排序
+    } 
     
 	return result;
 }
@@ -455,9 +458,9 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
         log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
         tmp[0] = 0x00;
 
-        wRet = readHead(tmp,CARD_MODE);
+        //wRet = readHead(tmp,CARD_MODE);
         
-//        wRet = delHead(tmp,CARD_MODE);
+        wRet = delHead(tmp,CARD_MODE);
 //        log_d("cardArray %d = %s,ret = %d\r\n",i,cardArray[i],wRet);  
 
         //2.查询以卡号为ID的记录，并删除
@@ -480,10 +483,10 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
 
         ret = mqttSendData(buf,len); 
 
-        if((ret > 20) && (wRet != NO_FIND_HEAD)) //这里是随便一个长度，为了避免跟错误代码冲突，错误代码表要改
-        {        
-            SendToQueue(tmp,CARD_NO_BCD_LEN,4);            
-        }     
+//        if((ret > 20) && (wRet != NO_FIND_HEAD)) //这里是随便一个长度，为了避免跟错误代码冲突，错误代码表要改
+//        {        
+//            SendToQueue(tmp,CARD_NO_BCD_LEN,4);            
+//        }     
 
     }
     
@@ -716,10 +719,10 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
     tmp[0] = 0x00;
 
     //1.查找要删除的卡号
-    ret = readHead(tmp,CARD_MODE);
+//    ret = readHead(tmp,CARD_MODE);
     
 //    //删除CARDNO
-//    wRet = delHead(tmp,CARD_MODE);
+    ret = delHead(tmp,CARD_MODE);
     
     //2.查询以卡号为ID的记录，并删除
     if(ret != NO_FIND_HEAD)
@@ -741,10 +744,11 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
     len = strlen((const char*)buf);
 
     ret = mqttSendData(buf,len); 
-    if(ret > 20) //这里是随便一个长度，为了避免跟错误代码冲突，错误代码表要改
-    {        
-        SendToQueue(tmp,CARD_NO_BCD_LEN,4);            
-    } 
+    
+//    if(ret > 20) //这里是随便一个长度，为了避免跟错误代码冲突，错误代码表要改
+//    {        
+//        SendToQueue(tmp,CARD_NO_BCD_LEN,4);            
+//    } 
     
 	return result;
 

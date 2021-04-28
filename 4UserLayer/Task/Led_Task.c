@@ -67,7 +67,7 @@ static void vTaskLed(void *pvParameters)
     {  
         LEDERROR = !LEDERROR;
         
-        bsp_HC595Show(1,1,7);
+        bsp_HC595Show(1,1,8);
         vTaskDelay(500);
         bsp_HC595Show(0,0,1);    
         

@@ -88,7 +88,7 @@ static uint8_t checkFlashSpace ( uint8_t mode )
 
 int readHead(uint8_t *headBuff,uint8_t mode)
 {
-	uint8_t i = 0;
+	uint16_t i = 0;
 	uint8_t multiple = 0;
 	uint16_t remainder = 0;
 	uint32_t address = 0;
@@ -109,9 +109,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
 //	{
 //	    log_d("card status:del\r\n");
 //	    return NO_FIND_HEAD; //已删除卡
-//	}
-
-    
+//	}    
 
 	memcpy(targetData.headData.sn,headBuff,sizeof(targetData.headData.sn));
 
@@ -146,7 +144,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
 
     firstData.headData.id = 0;
     lastData.headData.id = 0;   
-
+#if 0
     iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
     
     ret = FRAM_Read (FM24V10_1, address, &firstData,CARD_USER_LEN);
@@ -181,6 +179,30 @@ int readHead(uint8_t *headBuff,uint8_t mode)
             return multiple*HEAD_NUM_SECTOR+ret;
         }
     }    
+
+
+#else
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+     
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */  
+    
+    ret = FRAM_Read (FM24V10_1, address, gSectorBuff, (remainder)* sizeof(HEADINFO_STRU));
+    if(ret == 0)
+    {
+        log_e("read fram error\r\n");
+        return NO_FIND_HEAD;
+    } 
+
+    for(i=0;i<remainder;i++)
+    {
+        if(gSectorBuff[i].headData.id == targetData.headData.id)
+        {             
+            iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
+            log_d ( "find it，use %d ms\r\n",iTime2 - iTime1); 
+            return multiple*HEAD_NUM_SECTOR+i;
+        }
+    }
+#endif
     
     for(i=0;i<multiple;i++)
     {
@@ -513,17 +535,28 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     {
         log_e("write fram error\r\n");
         return NO_FIND_HEAD;
-    }   
+    }      
+        
 
     //4.对这一页重新排序
+    addr = CARD_NO_HEAD_ADDR;
+    
     if(multiple >= 1)
-    {
-        addr += (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+    {          
+        if(remainder == 0)
+        {            
+            addr += (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+        }
+        else
+        {
+            addr += multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+        }
+
         num = HEAD_NUM_SECTOR;
     }
     else
     {
-        addr = CARD_NO_HEAD_ADDR;
+        //这里因为总的卡数量小于1024，所以NUM取最大值
         ClearRecordIndex();
         optRecordIndex(&gRecordIndex,READ_PRARM);        
         num = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
@@ -539,6 +572,8 @@ int delHead(uint8_t *headBuff,uint8_t mode)
 //        addr = multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
 //        num = remainder * sizeof(HEADINFO_STRU);    
 //    }
+
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
     
     //读一页数据
     ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, num* sizeof(HEADINFO_STRU));
