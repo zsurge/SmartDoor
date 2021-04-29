@@ -105,13 +105,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
 		return NO_FIND_HEAD;
 	}	
 
-//	if(headBuff[0] == 0x01)
-//	{
-//	    log_d("card status:del\r\n");
-//	    return NO_FIND_HEAD; //已删除卡
-//	}    
-
-	memcpy(targetData.headData.sn,headBuff,sizeof(targetData.headData.sn));
+	memcpy(targetData.headData.sn,headBuff,CARD_NO_LEN_BCD);
 
     log_d("want find head.headData.id = %x,sn = %02x,%02x,%02x,%02x\r\n",targetData.headData.id,targetData.headData.sn[0],targetData.headData.sn[1],targetData.headData.sn[2],targetData.headData.sn[3]);
 	
@@ -140,48 +134,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
     log_d("addr = %x,multiple = %d,remainder=%d\r\n",address,multiple,remainder);
     
 
-//2.读取最后一页第一个卡号和最后一个卡号；
-
-    firstData.headData.id = 0;
-    lastData.headData.id = 0;   
-#if 0
-    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
-    
-    ret = FRAM_Read (FM24V10_1, address, &firstData,CARD_USER_LEN);
-    if(ret == 0)
-    {
-        log_e("read fram error\r\n");
-        return NO_FIND_HEAD; 
-    }
-    
-    ret = FRAM_Read (FM24V10_1, address+(remainder-1)* CARD_USER_LEN, &lastData,CARD_USER_LEN); 
-    if(ret == 0)
-    {
-        log_e("read fram error\r\n");
-        return NO_FIND_HEAD;
-    }  
-    log_d("head = %x,last page %x,%x\r\n",targetData.headData.id,firstData.headData.id,lastData.headData.id);
-
-    
-    if((targetData.headData.id >= firstData.headData.id) && (targetData.headData.id <= lastData.headData.id))
-    {      
-    
-//        ret = Bin_Search(gSectorBuff,remainder,targetData.headData.id);
-        ret = Bin_Search_addr(address,remainder,targetData.headData.id);       
-
-        log_d("1.Bin_Search flash index = %d\r\n",ret);
-        
-        if(ret != NO_FIND_HEAD)
-        {
-            iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
-            log_d ( "find it，use %d ms\r\n",iTime2 - iTime1);      
-
-            return multiple*HEAD_NUM_SECTOR+ret;
-        }
-    }    
-
-
-#else
+   //2.；循环读尾页数据
     memset(gSectorBuff,0x00,sizeof(gSectorBuff));
      
     iTime1 = xTaskGetTickCount();   /* 记下开始时间 */  
@@ -198,12 +151,13 @@ int readHead(uint8_t *headBuff,uint8_t mode)
         if(gSectorBuff[i].headData.id == targetData.headData.id)
         {             
             iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
-            log_d ( "find it，use %d ms\r\n",iTime2 - iTime1); 
+            log_i ( "find it，use %d ms\r\n",iTime2 - iTime1); 
             return multiple*HEAD_NUM_SECTOR+i;
         }
     }
-#endif
-    
+
+   //3.去其它页查找数据
+   
     for(i=0;i<multiple;i++)
     {
         address = CARD_NO_HEAD_ADDR;//从零开始读;
@@ -229,14 +183,12 @@ int readHead(uint8_t *headBuff,uint8_t mode)
 
         
         if((targetData.headData.id >= firstData.headData.id) && (targetData.headData.id <= lastData.headData.id))
-        {
-//            ret = Bin_Search(gSectorBuff,HEAD_NUM_SECTOR,targetData.headData.id);
-            
+        {            
             ret = Bin_Search_addr(address,HEAD_NUM_SECTOR,targetData.headData.id);       
             if(ret != NO_FIND_HEAD)
             {
             	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-            	log_d ( "find it，use %d ms,index = %d\r\n",iTime2 - iTime1,i*HEAD_NUM_SECTOR+ret);      
+            	log_i ( "find it，use %d ms,index = %d\r\n",iTime2 - iTime1,i*HEAD_NUM_SECTOR+ret);      
                 
                 return i*HEAD_NUM_SECTOR+ret;
             }
@@ -245,7 +197,7 @@ int readHead(uint8_t *headBuff,uint8_t mode)
     }
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "read all Head，use %d ms\r\n",iTime2 - iTime1 );    
+	log_i ( "read all Head，use %d ms\r\n",iTime2 - iTime1 );    
 
     return NO_FIND_HEAD;
 
@@ -385,6 +337,13 @@ uint32_t addCard(uint8_t *head,uint8_t mode)
 
     memcpy(tmpCard.headData.sn,head,CARD_NO_LEN_BCD);
 
+//    ret = readHead(head,mode);
+//    
+//    if(ret != NO_FIND_HEAD)
+//    {
+//        return 1; //返回成功
+//    }
+
     
    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
    //1.先判定当前有多少个卡号;
@@ -491,7 +450,7 @@ uint32_t addCard(uint8_t *head,uint8_t mode)
 	optRecordIndex(&gRecordIndex,WRITE_PRARM);
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );
+	log_i ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );
 
     return gRecordIndex.cardNoIndex;
   

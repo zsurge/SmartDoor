@@ -130,6 +130,7 @@ void ClearTemplateParam(void);
 void ClearRecordIndex(void);
 void clearTemplateFRAM(void);
 
+void eraseHeadSector_test(int begin,int end);
 
 void eraseHeadSector(void);
 void eraseDataSector(void);

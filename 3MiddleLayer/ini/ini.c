@@ -726,6 +726,12 @@ void eraseHeadSector ( void )
 	FRAM_Erase ( FM24V10_1,0,122880 );	
 }
 
+void eraseHeadSector_test(int begin,int end)
+{
+	FRAM_Erase ( FM24V10_1,begin,end );	
+}
+
+
 void eraseDataSector ( void )
 {
 	uint16_t i = 0;

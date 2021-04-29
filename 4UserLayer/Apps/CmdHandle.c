@@ -359,7 +359,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t tmp[CARD_NO_LEN] = {0};    
     uint8_t cardNo[CARD_NO_BCD_LEN] = {0};
-    uint32_t ret = 0;
+    int ret = 0;
     int sendLen = 0;
 
     if(!msgBuf)
@@ -383,45 +383,63 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("add cardNo=  %02x, %02x, %02x, %02x\r\n",cardNo[0],cardNo[1],cardNo[2],cardNo[3]);
 
     memset(buf,0x00,sizeof(buf));
-    
 
-    ret = addCard(cardNo,CARD_MODE);
-    log_d("addCard = %d\r\n",ret);
-    
-    if(ret >= 1)
+    ret = readHead(cardNo,CARD_MODE);        
+    if(ret == NO_FIND_HEAD)
     {
-//        gCardSortTimer.outTimer = 30000;
-//        gCardSortTimer.flag = 1; 
-//        sortLastPageCard();
+        ret = addCard(cardNo,CARD_MODE);
+        log_d("addCard = %d\r\n",ret);
+        
+        if(ret >= 1)
+        {
+    //        gCardSortTimer.outTimer = 30000;
+    //        gCardSortTimer.flag = 1; 
+    //        sortLastPageCard();
 
-        //为了防止漏下，先写入到FLASH中,OK后应答服务器 
-        result = packetSingleAddCardJson(msgBuf,1,buf);        
-//        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf)); 
-    }  
+            //为了防止漏下，先写入到FLASH中,OK后应答服务器 
+            result = packetSingleAddCardJson(msgBuf,1,buf);        
+    //        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf)); 
+        }  
+        else
+        {
+            //为了防止漏下，先写入到FLASH中,OK后应答服务器 
+            result = packetSingleAddCardJson(msgBuf,0,buf);        
+            //        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf));        
+        }
+
+        if(result != NO_ERR)
+        {
+            return result;
+        }
+        
+        sendLen = mqttSendData(buf,strlen((const char*)buf)); 
+        
+        if(sendLen < 20)//随便一个长度
+        {
+            result = FLASH_W_ERR;     
+        }      
+
+        if((ret/1024 >= 1) && (ret%1024 == 0))
+        {        
+            log_i("sortPageCard index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+            SendToQueue(cardNo,CARD_NO_BCD_LEN,2); //这里进行整页排序
+        } 
+    }
     else
     {
-        //为了防止漏下，先写入到FLASH中,OK后应答服务器 
-        result = packetSingleAddCardJson(msgBuf,0,buf);        
-        //        log_d("packetSingleAddCardJson %s,len = %d\r\n",buf,strlen((char *)buf));        
+        result = packetSingleAddCardJson(msgBuf,1,buf);   
+        if(result != NO_ERR)
+        {
+            return result;
+        }
+        
+        sendLen = mqttSendData(buf,strlen((const char*)buf)); 
+        
+        if(sendLen < 20)//随便一个长度
+        {
+            result = FLASH_W_ERR;     
+        }
     }
-
-    if(result != NO_ERR)
-    {
-        return result;
-    }
-    
-    sendLen = mqttSendData(buf,strlen((const char*)buf)); 
-    
-    if(sendLen < 20)//随便一个长度
-    {
-        result = FLASH_W_ERR;     
-    }      
-
-    if((ret/1024 >= 1) && (ret%1024 == 0))
-    {        
-        log_i("sortPageCard index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
-        SendToQueue(cardNo,CARD_NO_BCD_LEN,2); //这里进行整页排序
-    } 
     
 	return result;
 }
@@ -685,7 +703,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
     //这里添加一个指令，用来对所有数据进行排序    
 //    SendToQueue(tmpBcd,CARD_NO_BCD_LEN,10); //这里进行整页排序
 
-
+    eraseHeadSector_test(0,512);
     
 	return result;
 
@@ -828,76 +846,114 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[256] = {0};
+    uint8_t value[256] = {0};
     uint8_t tmpBcd[CARD_NO_BCD_LEN] = {0};   
     uint8_t tmpAsc[CARD_NO_LEN] = {0};
     uint8_t cardArray[20][8] = {0};
     uint8_t multipleCardNum=0;    
     uint16_t i = 0;  
     int sendLen = 0;
-    uint32_t ret = 0;    
+    int ret = 0;    
 
     if(!msgBuf)
     {
         return STR_EMPTY_ERR;
     }
 
-    gCardSortTimer.outTimer = 30000;
-    gCardSortTimer.flag = 1;
+//    gCardSortTimer.outTimer = 30000;
+//    gCardSortTimer.flag = 1;
     
-    //2.保存卡号
+    //2.保存卡号    
     GetCardArray ((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",&multipleCardNum,cardArray);
-    
+
     for(i=0;i<multipleCardNum;i++)
     { 
         memset(tmpAsc,0x00,sizeof(tmpAsc));
         memset(tmpBcd,0x00,sizeof(tmpBcd));
         memcpy(tmpAsc,cardArray[i],CARD_NO_LEN);
+        
         log_d("%d / %d :cardNo = %s,asc = %s\r\n",multipleCardNum,i+1,cardArray[i],tmpAsc); 
         
         asc2bcd(tmpBcd, tmpAsc, CARD_NO_LEN, 1);        
         tmpBcd[0] = 0x00;//韦根26最高位无数据     
         
-        memset(buf,0x00,sizeof(buf));
+        memset(buf,0x00,sizeof(buf));  
+        memset(value,0x00,sizeof(value));  
 
-
-        ret = addCard(tmpBcd,CARD_MODE);
-        log_d("addCard = %d\r\n",ret);
+        ret = readHead(tmpBcd,CARD_MODE);   
         
-        if(ret >= 1)
-        {   
-            result = modifyJsonItem(packetBaseJson(msgBuf,1),"cardNo",tmpAsc,0,buf); 
+        if(ret == NO_FIND_HEAD)
+        {
+            ret = addCard(tmpBcd,CARD_MODE);
+            log_d("addCard = %d\r\n",ret);
+            
+            if(ret >= 1)
+            {   
+                result = packetBaseJson_test(msgBuf,1,value);   
+                if(result != NO_ERR)
+                {
+                    return result;
+                }
+                result = modifyJsonItem(value,"cardNo",tmpAsc,0,buf); 
+            }
+            else
+            {
+                result = packetBaseJson_test(msgBuf,0,value);
+                if(result != NO_ERR)
+                {
+                    return result;
+                }
+                result = modifyJsonItem(value,"cardNo",tmpAsc,0,buf); 
+            }
+
+            if(result != NO_ERR)
+            {            
+                return result;
+            }     
+            
+            //为了防止漏下，先写入到FLASH中,OK后应答服务器 
+            sendLen = mqttSendData(buf,strlen((const char*)buf)); 
+            
+            if(sendLen < 20)//随便一个长度
+            {
+                result = FLASH_W_ERR;     
+            }
+
+            log_i("download index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+
+            if((ret/1024 >= 1) && (ret%1024 == 0))
+            {        
+                log_i("sortPageCard index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+                SendToQueue(tmpBcd,CARD_NO_BCD_LEN,2); //这里进行整页排序
+            }  
+
         }
         else
         {
-            result = modifyJsonItem(packetBaseJson(msgBuf,0),"cardNo",tmpAsc,0,buf); 
+            result = packetBaseJson_test(msgBuf,1,value);   
+            if(result != NO_ERR)
+            {
+                return result;
+            }
+            result = modifyJsonItem(value,"cardNo",tmpAsc,0,buf); 
+
+            sendLen = mqttSendData(buf,strlen((const char*)buf)); 
+
+            log_i("Already exists index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+            
+            if(sendLen < 20)//随便一个长度
+            {
+                result = FLASH_W_ERR;     
+            }            
         }
-
-        if(result != NO_ERR)
-        {            
-            return result;
-        }     
-        
-        //为了防止漏下，先写入到FLASH中,OK后应答服务器 
-        sendLen = mqttSendData(buf,strlen((const char*)buf)); 
-        
-        if(sendLen < 20)//随便一个长度
-        {
-            result = FLASH_W_ERR;     
-        }
-
-        log_i("download index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
-
-        if((ret/1024 >= 1) && (ret%1024 == 0))
-        {        
-            log_i("sortPageCard index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
-            SendToQueue(tmpBcd,CARD_NO_BCD_LEN,2); //这里进行整页排序
-        }   
 
     }
     
 	return result;
 
 }
+
+
 
 //远程呼梯
 static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
@@ -989,7 +1045,8 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
     }
     
     //清空用户信息
-    eraseUserDataAll();    
+    //eraseUserDataAll();  
+    log_i("eraseUserDataAll\r\n");
     return result;
 }
 

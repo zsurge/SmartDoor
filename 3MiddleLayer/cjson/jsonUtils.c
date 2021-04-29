@@ -474,6 +474,86 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
     return result;
 }
 
+SYSERRORCODE_E packetBaseJson_test(uint8_t *jsonBuff,char status,uint8_t *descBuf)
+{    
+	cJSON* root,*newroot,*json_cmdCode,*json_ownerId;
+    char *tmpBuf;
+    
+	root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
+	
+	if ( !root )
+	{
+		log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+        
+        cJSON_Delete(root);        
+        cJSON_Delete(newroot);
+        my_free(tmpBuf);
+        tmpBuf=NULL;        
+        
+		return CJSON_CREATE_ERR;
+	}
+	else
+	{
+        json_cmdCode = cJSON_GetObjectItem ( root, "commandCode" );
+        json_ownerId = cJSON_GetObjectItem ( root, "ownerId" );
+
+        
+
+        newroot = cJSON_CreateObject();
+   
+        if(!newroot)
+        {
+            log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+            cJSON_Delete(root);
+            cJSON_Delete(newroot);
+            my_free(tmpBuf);            
+            tmpBuf=NULL;        
+    		return CJSON_CREATE_ERR;
+        }
+
+        if(json_cmdCode)
+            cJSON_AddStringToObject(newroot, "commandCode", json_cmdCode->valuestring);     
+            
+        if(json_ownerId)
+            cJSON_AddNumberToObject(newroot, "ownerId", json_ownerId->valueint);
+            
+        
+        cJSON_AddStringToObject(newroot, "deviceCode",gDevBaseParam.deviceCode.deviceSn);
+        
+        if(status == 1)
+            cJSON_AddStringToObject(newroot, "status", "1");
+        else
+            cJSON_AddStringToObject(newroot, "status", "0");
+            
+
+        
+        tmpBuf = cJSON_PrintUnformatted(newroot); 
+
+//        log_d("packetBaseJson = %s\r\n",tmpBuf);
+
+        if(!tmpBuf)
+        {
+            log_d("cJSON_PrintUnformatted error \r\n");
+
+            cJSON_Delete(root);
+            cJSON_Delete(newroot);      
+            my_free(tmpBuf);
+            tmpBuf=NULL;        
+            
+            return CJSON_CREATE_ERR;
+        }    
+
+        strcpy((char *)descBuf,tmpBuf);
+
+	}
+	
+    my_free(tmpBuf);
+	cJSON_Delete(root);
+    cJSON_Delete(newroot);
+    tmpBuf=NULL;  
+    
+    return NO_ERR;    
+}
 
 
 uint8_t* packetBaseJson(uint8_t *jsonBuff,char status)
@@ -662,8 +742,7 @@ void GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num,uin
         log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
         cJSON_Delete(root);
         my_free(root);
-          return ;      
-        //return NULL;
+        return ;      
     }
     else
     {
@@ -719,9 +798,7 @@ void GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num,uin
 			    strcpy ((char*)descBuff[0], json_item->valuestring ); 
 			}
 
-			log_d ( "json_item =  %s\r\n",descBuff[0]);
-
-            
+			log_d ( "json_item =  %s\r\n",descBuff[0]);            
             
         }
         else
@@ -731,8 +808,7 @@ void GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num,uin
             cJSON_Delete(root);
             my_free(root);
             
-          return ;      
-        //return NULL;
+          return ; 
         }
         
     } 
