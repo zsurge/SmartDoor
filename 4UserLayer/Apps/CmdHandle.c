@@ -703,7 +703,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
     //这里添加一个指令，用来对所有数据进行排序    
 //    SendToQueue(tmpBcd,CARD_NO_BCD_LEN,10); //这里进行整页排序
 
-    eraseHeadSector_test(0,512);
+//    eraseHeadSector_test(0,512);
     
 	return result;
 

@@ -90,7 +90,7 @@ static void vTaskDataProcess(void *pvParameters)
         {
             log_d("-----start sort-----\r\n");
             gCardSortTimer.flag = 0;
-            sortLastPageCard();
+            //sortLastPageCard();
             //manualSortCard(); //1.17 É¾³ýÈ«¾ÖÅÅÐò
         } 
 
@@ -139,7 +139,6 @@ static void vTaskDataProcess(void *pvParameters)
                 if(ret != 1)
                 {
                    //1.É¾³ýÓÃ»§Ê§°Ü
-
                 }              
             }        
             else if(ptMsg->mode == READMODE) //¶Á¿¨
