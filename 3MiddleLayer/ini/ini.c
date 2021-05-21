@@ -713,12 +713,12 @@ void eraseUserDataAll ( void )
 	int32_t iTime1, iTime2;
 	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
 	eraseHeadSector();
-	eraseDataSector();
+//	eraseDataSector();
     eraseUserDataIndex();
 	clearTemplateFRAM();
     initTemplateParam();	
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "eraseUserDataAll成功，耗时: %dms\r\n",iTime2 - iTime1 );
+	log_i ( "eraseUserDataAll成功，耗时: %dms\r\n",iTime2 - iTime1 );
 }
 
 void eraseHeadSector ( void )

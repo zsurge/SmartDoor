@@ -474,12 +474,15 @@ int delHead(uint8_t *headBuff,uint8_t mode)
 	}	
 
     //1.²éÕÒÒªÉ¾³ýµÄ¿¨ºÅ
-    ret = readHead(headBuff,CARD_MODE);
+    ret = readHead(headBuff,CARD_MODE);    
 
     if(ret == NO_FIND_HEAD)
     {
+        log_i("del not find it,return");
         return NO_FIND_HEAD;
-    }
+    } 
+    
+    log_i("del find it,index = %d",ret);
 
     //2.¼ÆËãÒªÉ¾³ý¿¨ºÅµÄµØÖ·
 	multiple = ret / HEAD_NUM_SECTOR;
@@ -491,7 +494,7 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     tmpCard.headData.id = 0;    
     ret = FRAM_Write ( FM24V10_1, addr, &tmpCard,1* sizeof(HEADINFO_STRU));    
     if(ret == 0)
-    {
+    {        
         log_e("write fram error\r\n");
         return NO_FIND_HEAD;
     }      
@@ -543,7 +546,8 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     }
 
     //ÅÅÐò
-    qSortCard(gSectorBuff,num);  
+//    qSortCard(gSectorBuff,num);  
+    sortHead(gSectorBuff,num);
 
     //Ð´»ØÊý¾Ý
     ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,num* sizeof(HEADINFO_STRU));
@@ -562,7 +566,7 @@ int delHead(uint8_t *headBuff,uint8_t mode)
     #endif
     
 
-    log_d("qSortCard success\r\n");
+    log_d("del qSortCard success\r\n");
     
 
     
@@ -739,7 +743,8 @@ void sortLastPageCard(void)
     }    
     
     //5.ÅÅÐò        
-    qSortCard(gSectorBuff,remainder);
+//    qSortCard(gSectorBuff,remainder);
+        sortHead(gSectorBuff,remainder);
 
     #if DEBUG_PRINT
     for(int i=0;i<remainder;i++)
@@ -803,7 +808,8 @@ void sortPageCard(void)
     } 
     
     //ÅÅÐò
-    qSortCard(gSectorBuff,HEAD_NUM_SECTOR);
+//    qSortCard(gSectorBuff,HEAD_NUM_SECTOR);
+        sortHead(gSectorBuff,HEAD_NUM_SECTOR);    
 
 #if DEBUG_PRINT
     for(int i=0;i<HEAD_NUM_SECTOR;i++)
@@ -865,7 +871,8 @@ void manualSortCard(void)
         } 
         
         //5.ÅÅÐò        
-        qSortCard(gSectorBuff,remainder);   
+//        qSortCard(gSectorBuff,remainder);   
+        sortHead(gSectorBuff,remainder);          
         
         ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,remainder* sizeof(HEADINFO_STRU));        
         if(ret == 0)
@@ -890,7 +897,8 @@ void manualSortCard(void)
             return ;
         }         
         //ÅÅÐò
-        qSortCard(gSectorBuff,HEAD_NUM_SECTOR); 
+//        qSortCard(gSectorBuff,HEAD_NUM_SECTOR); 
+        sortHead(gSectorBuff,HEAD_NUM_SECTOR);           
         //Ð´»ØÊý¾Ý
         ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));        
         if(ret == 0)

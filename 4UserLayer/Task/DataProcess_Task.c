@@ -37,6 +37,8 @@
 #define DATAPROC_TASK_PRIO		(tskIDLE_PRIORITY + 6) 
 #define DATAPROC_STK_SIZE 		(configMINIMAL_STACK_SIZE*12)
 
+#define UPGRADE_MODE
+
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
@@ -133,8 +135,8 @@ static void vTaskDataProcess(void *pvParameters)
             }  
             else if(ptMsg->mode == DEL_CARD_MODE)
             {
-                ret = delHead(ptMsg->cardID,CARD_MODE);
-                log_d("delHead = %d\r\n",ret);
+                //ret = delHead(ptMsg->cardID,CARD_MODE);
+                //log_d("delHead = %d\r\n",ret);
                 
                 if(ret != 1)
                 {
@@ -143,13 +145,16 @@ static void vTaskDataProcess(void *pvParameters)
             }        
             else if(ptMsg->mode == READMODE) //读卡
             {      
-    //            memcpy(ptMsg->cardID,"\x00\xc2\x84\x94",4);
-                log_d("test cardid %02x,%02x,%02x,%02x\r\n",ptMsg->cardID[0],ptMsg->cardID[1],ptMsg->cardID[2],ptMsg->cardID[3]);
-                
-                ret = readHead(ptMsg->cardID, CARD_MODE);
-                //log_d("readHead = %d\r\n",ret);
+                memcpy(ptMsg->cardID,"\x00\x17\x72\x42",4);
+//                memcpy(ptMsg->cardID,"\x00\xF4\xE1\x7D",4);
+                log_i("test cardid %02x,%02x,%02x,%02x\r\n",ptMsg->cardID[0],ptMsg->cardID[1],ptMsg->cardID[2],ptMsg->cardID[3]);
 
-                //ret = 99;//测试版本，第二天早上要更新过来0430
+                #ifdef UPGRADE_MODE
+                    ret = 99;//测试版本，第二天早上要更新过来0430
+                #else
+                    ret = readHead(ptMsg->cardID, CARD_MODE);
+                    log_d("readHead = %d\r\n",ret); 
+                #endif
                 
                 if(ret != NO_FIND_HEAD)
                 {
@@ -178,13 +183,14 @@ static void vTaskDataProcess(void *pvParameters)
                     }
                     else
                     {
+                    #ifndef UPGRADE_MODE
                         log_d("2 cardid %02x,%02x,%02x,%02x,devid = %d\r\n",ptMsg->cardID[0],ptMsg->cardID[1],ptMsg->cardID[2],ptMsg->cardID[3],ptMsg->devID);
                         //打包数据                
                         packetCard(ptMsg->cardID, jsonbuff);
 
                         //发送数据到MQTT服务器
                         len = strlen((const char*)jsonbuff);
-                        log_d("send = %d,buff = %s\r\n",len,jsonbuff);   
+                        log_i("send = %d,buff = %s\r\n",len,jsonbuff);   
                         
                         len = mqttSendData(jsonbuff,len);                    
 
@@ -194,6 +200,7 @@ static void vTaskDataProcess(void *pvParameters)
                             //写记录到FLASH
                             writeRecord(jsonbuff,  strlen((const char*)jsonbuff));
                         } 
+                   #endif                        
                     }
                 }
                 else

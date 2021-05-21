@@ -85,14 +85,13 @@ void reverseArray(uint8_t *array)
 {
     int i,temp;
     int size = sizeof(array)/sizeof(array[0]);
-
     
     for(i=0; i<size/2; i++)
     {
         temp = array[i];
         array[i] = array[size-i-1];
         array[size-i-1] = temp;
-    }   
+    }  
 
 }
 

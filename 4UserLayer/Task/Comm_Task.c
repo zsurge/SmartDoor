@@ -263,7 +263,7 @@ static void vTaskComm(void *pvParameters)
         {  
             gChannel = ptCmd->cmd[5];
             //·¢ËÍÖ¸Áî
-            log_d("ptCmd = %02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\r\n",
+            log_i("ptCmd = %02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\r\n",
             ptCmd->cmd[0],ptCmd->cmd[1],ptCmd->cmd[2],ptCmd->cmd[3],
             ptCmd->cmd[4],ptCmd->cmd[5],ptCmd->cmd[6],ptCmd->cmd[7]);
 

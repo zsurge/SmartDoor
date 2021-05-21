@@ -333,7 +333,7 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
         //或者是队列满                
     }     
 
-#if DEBUG_PRINT
+#if 1//DEBUG_PRINT
     TestFlash(CARD_MODE);
 #endif    
 	return result;
@@ -378,13 +378,14 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     memset(cardNo,0x00,sizeof(cardNo));
     asc2bcd(cardNo, tmp, CARD_NO_LEN, 1); 
 
+    log_i("add cardNo=  %02x, %02x, %02x, %02x\r\n",cardNo[0],cardNo[1],cardNo[2],cardNo[3]);
+
     cardNo[0] = 0x00;//韦根26最高位无数据
-    
-    log_d("add cardNo=  %02x, %02x, %02x, %02x\r\n",cardNo[0],cardNo[1],cardNo[2],cardNo[3]);
 
     memset(buf,0x00,sizeof(buf));
 
-    ret = readHead(cardNo,CARD_MODE);        
+    ret = readHead(cardNo,CARD_MODE);
+    
     if(ret == NO_FIND_HEAD)
     {
         ret = addCard(cardNo,CARD_MODE);
@@ -461,8 +462,8 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
     if(!msgBuf)
     {
         return STR_EMPTY_ERR;
-    }   
-
+    } 
+    
 //    cardArray = GetCardArray ((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",&num);  
     GetCardArray ((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",&num,cardArray);  
 
@@ -473,7 +474,7 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
         log_d("%d / %d :cardNo = %s\r\n",num,i+1,cardArray[i]);      
         memset(tmp,0x00,sizeof(tmp));
         asc2bcd(tmp, cardArray[i], CARD_NO_LEN, 1);        
-        log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
+        log_i("del all: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
         tmp[0] = 0x00;
 
         //wRet = readHead(tmp,CARD_MODE);
@@ -732,7 +733,7 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
 
     memset(tmp,0x00,sizeof(tmp));
     asc2bcd(tmp, cardNo, CARD_NO_LEN, 1);        
-    log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);    
+    log_i("del single : %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);    
 
     tmp[0] = 0x00;
 
@@ -872,7 +873,7 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
         memset(tmpBcd,0x00,sizeof(tmpBcd));
         memcpy(tmpAsc,cardArray[i],CARD_NO_LEN);
         
-        log_d("%d / %d :cardNo = %s,asc = %s\r\n",multipleCardNum,i+1,cardArray[i],tmpAsc); 
+        log_i("%d / %d :cardNo = %s,asc = %s\r\n",multipleCardNum,i+1,cardArray[i],tmpAsc); 
         
         asc2bcd(tmpBcd, tmpAsc, CARD_NO_LEN, 1);        
         tmpBcd[0] = 0x00;//韦根26最高位无数据     
@@ -880,10 +881,10 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
         memset(buf,0x00,sizeof(buf));  
         memset(value,0x00,sizeof(value));  
 
-        ret = readHead(tmpBcd,CARD_MODE);   
-        
-        if(ret == NO_FIND_HEAD)
-        {
+//        ret = readHead(tmpBcd,CARD_MODE);   
+//        
+//        if(ret == NO_FIND_HEAD)
+//        {
             ret = addCard(tmpBcd,CARD_MODE);
             log_d("addCard = %d\r\n",ret);
             
@@ -927,25 +928,25 @@ static SYSERRORCODE_E DownLoadCardID ( uint8_t* msgBuf )
                 SendToQueue(tmpBcd,CARD_NO_BCD_LEN,2); //这里进行整页排序
             }  
 
-        }
-        else
-        {
-            result = packetBaseJson_test(msgBuf,1,value);   
-            if(result != NO_ERR)
-            {
-                return result;
-            }
-            result = modifyJsonItem(value,"cardNo",tmpAsc,0,buf); 
+//        }
+//        else
+//        {
+//            result = packetBaseJson_test(msgBuf,1,value);   
+//            if(result != NO_ERR)
+//            {
+//                return result;
+//            }
+//            result = modifyJsonItem(value,"cardNo",tmpAsc,0,buf); 
 
-            sendLen = mqttSendData(buf,strlen((const char*)buf)); 
+//            sendLen = mqttSendData(buf,strlen((const char*)buf)); 
 
-            log_i("Already exists index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
-            
-            if(sendLen < 20)//随便一个长度
-            {
-                result = FLASH_W_ERR;     
-            }            
-        }
+//            log_i("Already exists index = %d,total = %d\r\n",ret,gRecordIndex.cardNoIndex);
+//            
+//            if(sendLen < 20)//随便一个长度
+//            {
+//                result = FLASH_W_ERR;     
+//            }            
+//        }
 
     }
     
@@ -1045,8 +1046,8 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
     }
     
     //清空用户信息
-    //eraseUserDataAll();  
-    log_i("eraseUserDataAll\r\n");
+    eraseUserDataAll();  
+//    log_i("eraseUserDataAll\r\n");
     return result;
 }
 
