@@ -448,11 +448,13 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
 SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_TEMP_LEN] = {0};
-    uint8_t tmp[CARD_NO_BCD_LEN] = {0};
+ //因为南宁江南华府会批量删除卡，先禁用 	
     uint16_t len = 0;
-    int wRet=1;
     int ret = 0;
+    uint8_t buf[MQTT_TEMP_LEN] = {0};
+#if 0    
+    uint8_t tmp[CARD_NO_BCD_LEN] = {0};    
+    int wRet=1;    
     uint8_t num=0;
     int i = 0;  
     uint8_t cardArray[20][8] = {0};    
@@ -473,7 +475,7 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
         log_d("%d / %d :cardNo = %s\r\n",num,i+1,cardArray[i]);      
         memset(tmp,0x00,sizeof(tmp));
         asc2bcd(tmp, cardArray[i], CARD_NO_LEN, 1);        
-        log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
+        log_i("del all: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);
         tmp[0] = 0x00;
 
         //wRet = readHead(tmp,CARD_MODE);
@@ -507,7 +509,20 @@ SYSERRORCODE_E DelCardNoAll ( uint8_t* msgBuf )
 //        }     
 
     }
-    
+#endif
+
+    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"0",0,buf);
+
+    if(result != NO_ERR)
+    {
+        return result;
+    }
+
+    len = strlen((const char*)buf);
+
+    ret = mqttSendData(buf,len);     
+
+
     return result;
 }
 
@@ -732,7 +747,7 @@ static SYSERRORCODE_E DelCardSingle( uint8_t* msgBuf )
 
     memset(tmp,0x00,sizeof(tmp));
     asc2bcd(tmp, cardNo, CARD_NO_LEN, 1);        
-    log_d("cardNo: %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);    
+    log_i("del single : %02x %02x %02x %02x\r\n",tmp[0],tmp[1],tmp[2],tmp[3]);    
 
     tmp[0] = 0x00;
 
@@ -1045,8 +1060,8 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
     }
     
     //清空用户信息
-    //eraseUserDataAll();  
-    log_i("eraseUserDataAll\r\n");
+    eraseUserDataAll();  
+//    log_i("eraseUserDataAll\r\n");
     return result;
 }
 

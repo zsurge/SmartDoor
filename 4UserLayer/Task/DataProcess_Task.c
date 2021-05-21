@@ -133,8 +133,8 @@ static void vTaskDataProcess(void *pvParameters)
             }  
             else if(ptMsg->mode == DEL_CARD_MODE)
             {
-                ret = delHead(ptMsg->cardID,CARD_MODE);
-                log_d("delHead = %d\r\n",ret);
+                //ret = delHead(ptMsg->cardID,CARD_MODE);
+                //log_d("delHead = %d\r\n",ret);
                 
                 if(ret != 1)
                 {
